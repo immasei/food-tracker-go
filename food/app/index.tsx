@@ -8,6 +8,31 @@ import {
 } from "react-native";
 import CaptionedImage from "../components/CaptionedImage";
 
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import firebaseApp from "../config/firebaseConfig";
+
+// // set a reference to the firebase to use it in this file
+// const auth = getAuth(firebaseApp);
+
+// // check if email and password are in the firebase, sign in if successful
+// signInWithEmailAndPassword(auth, "test_email@gmail.com", "pw")
+//   // if email and password are added as a user to the firebase -> successful
+//   .then((userCredential) => {
+//     // Signed up
+//     const user = userCredential.user;
+//     console.log("Success!!!");
+//     console.log(userCredential.user);
+//     // ...
+//   })
+//   // if email and password are NOT added as a user to the firebase -> failed
+//   .catch((error) => {
+//     const errorCode = error.code;
+//     const errorMessage = error.message;
+//     console.log("Error!!!");
+//     console.log(errorMessage);
+//     // ..
+//   });
+
 type Props = {};
 
 // const source: {} = require("../assets/cat.jpg");

@@ -34,6 +34,13 @@ const RootLayout = (props: Props) => {
             tabBarIcon: () => <Ionicons size={24} name="browsers" />,
           }}
         />
+        <Tabs.Screen
+          name="(users)"
+          options={{
+            title: "Profile",
+            tabBarIcon: () => <Ionicons size={24} name="person" />,
+          }}
+        />
       </Tabs>
     </SafeAreaProvider>
   );
