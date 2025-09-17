@@ -1,15 +1,14 @@
-import { StyleSheet, Text, View } from "react-native";
 import React from "react";
-import { Slot, Tabs } from "expo-router";
+import { Slot } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
-type Props = {};
-
-const TrackerLayout = (props: Props) => {
+export default function TrackerLayout() {
   return (
-    <Slot/>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <Slot />
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
-};
-
-export default TrackerLayout;
+}
