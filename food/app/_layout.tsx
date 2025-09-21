@@ -35,6 +35,13 @@ const RootLayout = (props: Props) => {
           }}
         />
         <Tabs.Screen
+          name="(tracker)"
+          options={{
+            title: "Food",
+            tabBarIcon: () => <Ionicons size={24} name="fast-food-outline" />,
+          }}
+        />
+        <Tabs.Screen
           name="(users)"
           options={{
             title: "Profile",
