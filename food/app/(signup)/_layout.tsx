@@ -8,7 +8,9 @@ type Props = {};
 
 const SignUpLayout = (props: Props) => {
   return (
-    <Slot/>
+    <SafeAreaProvider>
+        <Slot />
+    </SafeAreaProvider>
   );
 };
 
