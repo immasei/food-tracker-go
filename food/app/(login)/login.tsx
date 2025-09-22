@@ -9,7 +9,6 @@ import {
   GestureResponderEvent,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 
 import firebaseApp from "../../config/firebaseConfig";
 import { getFirestore, collection, getDocs } from "firebase/firestore";
@@ -19,7 +18,7 @@ const db = getFirestore(firebaseApp);
 
 type Props = {};
 
-const SignUp = (props: Props) => {
+const Login = (props: Props) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
@@ -31,14 +30,8 @@ const SignUp = (props: Props) => {
   const [isPhoneFocused, setIsPhoneFocused] = useState(false);
   const [isButtonPressed, setIsButtonPressed] = useState(false);
 
-  const router = useRouter();
-
   const signUp = () => {
     
-  };
-
-  const signIn = () => {
-    router.push("/login");
   };
 
   return (
@@ -52,7 +45,7 @@ const SignUp = (props: Props) => {
               borderColor: isUsernameFocused ? "black" : "#cfcfcf",
               borderWidth: isUsernameFocused ? 2 : 1,
             }]}
-            placeholder="username"
+            placeholder="alpaca"
             value={username}
             onChangeText={setUsername}
             onFocus={() => setIsUsernameFocused(true)}
@@ -66,7 +59,7 @@ const SignUp = (props: Props) => {
               borderColor: isPhoneFocused ? "black" : "#cfcfcf",
               borderWidth: isPhoneFocused ? 2 : 1,
             }]}
-            placeholder="phone number"
+            placeholder="0499999999"
             value={phone}
             onChangeText={setPhone}
             onFocus={() => setIsPhoneFocused(true)}
@@ -80,7 +73,7 @@ const SignUp = (props: Props) => {
               borderColor: isEmailFocused ? "black" : "#cfcfcf",
               borderWidth: isEmailFocused ? 2 : 1,
             }]}
-            placeholder="email"
+            placeholder="alpaca@gmail.com"
             value={email}
             onChangeText={setEmail}
             onFocus={() => setIsEmailFocused(true)}
@@ -94,7 +87,7 @@ const SignUp = (props: Props) => {
               borderColor: isPwdFocused ? "black" : "#cfcfcf",
               borderWidth: isPwdFocused ? 2 : 1,
             }]}
-            placeholder="password"
+            placeholder="hjpakla10k"
             value={password}
             onChangeText={setPassword}
             onFocus={() => setIsPwdFocused(true)}
@@ -117,17 +110,14 @@ const SignUp = (props: Props) => {
           color: isButtonPressed ? "gray" : "white",
         }]}>Sign Up</Text>
       </Pressable>
-      <View style={styles.signinContainer}>
-        <Text>Already have an account?</Text>
-        <Pressable onPress={signIn}>
-          <Text style={styles.signinLink}> Sign In</Text>
-        </Pressable>
-      </View>
+      <Text style={styles.signin}>Already have an account?
+        <Text style={styles.signinLink}> Sign In</Text>
+      </Text>
     </View>
   );
 };
 
-export default SignUp;
+export default Login;
 
 const styles = StyleSheet.create({
   container: {
@@ -168,11 +158,10 @@ const styles = StyleSheet.create({
   signUpBtnText: {
     fontSize: 17
   },
+  signin: {
+    marginTop: 40,
+  },  
   signinLink: {
     color: "blue",
-  },
-  signinContainer: {
-    flexDirection: "row",
-    marginTop: 40,
   },
 });
