@@ -48,6 +48,12 @@ const RootLayout = (props: Props) => {
             tabBarIcon: () => <Ionicons size={24} name="person" />,
           }}
         />
+        <Tabs.Screen
+          name="(signup)"
+          options={{
+            title: "SignUp",
+          }}
+        />
       </Tabs>
     </SafeAreaProvider>
   );
