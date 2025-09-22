@@ -9,7 +9,6 @@ import {
   GestureResponderEvent,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 
 import firebaseApp from "../../config/firebaseConfig";
 import { getFirestore, collection, getDocs } from "firebase/firestore";
@@ -19,60 +18,28 @@ const db = getFirestore(firebaseApp);
 
 type Props = {};
 
-const SignUp = (props: Props) => {
+const Login = (props: Props) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [username, setUsername] = useState("");
-  const [phone, setPhone] = useState("");
 
   const [isEmailFocused, setIsEmailFocused] = useState(false);
   const [isPwdFocused, setIsPwdFocused] = useState(false);
-  const [isUsernameFocused, setIsUsernameFocused] = useState(false);
-  const [isPhoneFocused, setIsPhoneFocused] = useState(false);
   const [isButtonPressed, setIsButtonPressed] = useState(false);
 
   const router = useRouter();
 
-  const signUp = () => {
+  const login = () => {
     
   };
 
-  const signIn = () => {
-    router.push("/login");
+  const signUp = () => {
+    router.push("/signup");
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Create Account</Text>
+      <Text style={styles.title}>Login</Text>
       <View>
-        <View>
-          <Text style={styles.categoryTitle}>Username</Text>
-          <TextInput 
-            style={[styles.textBox, { 
-              borderColor: isUsernameFocused ? "black" : "#cfcfcf",
-              borderWidth: isUsernameFocused ? 2 : 1,
-            }]}
-            placeholder="username"
-            value={username}
-            onChangeText={setUsername}
-            onFocus={() => setIsUsernameFocused(true)}
-            onBlur={() => setIsUsernameFocused(false)}
-          />
-        </View>
-        <View>
-          <Text style={styles.categoryTitle}>Phone number</Text>
-          <TextInput 
-            style={[styles.textBox, { 
-              borderColor: isPhoneFocused ? "black" : "#cfcfcf",
-              borderWidth: isPhoneFocused ? 2 : 1,
-            }]}
-            placeholder="phone number"
-            value={phone}
-            onChangeText={setPhone}
-            onFocus={() => setIsPhoneFocused(true)}
-            onBlur={() => setIsPhoneFocused(false)}
-          />
-        </View>
         <View>
           <Text style={styles.categoryTitle}>Email</Text>
           <TextInput 
@@ -105,29 +72,29 @@ const SignUp = (props: Props) => {
       </View>
       <Pressable 
         style={({ pressed }) => [
-          styles.signUpButton,
+          styles.signInButton,
           { 
             backgroundColor: pressed ? "gray" : "black",
             borderColor: pressed ? "gray" : "black",
           },
         ]} 
-        onPress={signUp}
+        onPress={login}
         >
         <Text style={[styles.signUpBtnText, {
           color: isButtonPressed ? "gray" : "white",
-        }]}>Sign Up</Text>
+        }]}>Login</Text>
       </Pressable>
-      <View style={styles.signinContainer}>
-        <Text>Already have an account?</Text>
-        <Pressable onPress={signIn}>
-          <Text style={styles.signinLink}> Sign In</Text>
+      <View style={styles.signUpContainer}>
+        <Text>Don't have an account?</Text>
+        <Pressable onPress={signUp}>
+          <Text style={styles.signUpLink}> Sign Up</Text>
         </Pressable>
       </View>
     </View>
   );
 };
 
-export default SignUp;
+export default Login;
 
 const styles = StyleSheet.create({
   container: {
@@ -155,7 +122,7 @@ const styles = StyleSheet.create({
     marginTop: 5,
     fontSize: 17,
   },
-  signUpButton: {
+  signInButton: {
     borderColor: "black",
     borderRadius: 10,
     borderWidth: 1,
@@ -168,10 +135,10 @@ const styles = StyleSheet.create({
   signUpBtnText: {
     fontSize: 17
   },
-  signinLink: {
+  signUpLink: {
     color: "blue",
   },
-  signinContainer: {
+  signUpContainer: {
     flexDirection: "row",
     marginTop: 40,
   },
