@@ -21,51 +21,25 @@ type Props = {};
 const Login = (props: Props) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [username, setUsername] = useState("");
-  const [phone, setPhone] = useState("");
 
   const [isEmailFocused, setIsEmailFocused] = useState(false);
   const [isPwdFocused, setIsPwdFocused] = useState(false);
-  const [isUsernameFocused, setIsUsernameFocused] = useState(false);
-  const [isPhoneFocused, setIsPhoneFocused] = useState(false);
   const [isButtonPressed, setIsButtonPressed] = useState(false);
 
-  const signUp = () => {
+  const router = useRouter();
+
+  const login = () => {
     
+  };
+
+  const signUp = () => {
+    router.push("/signup");
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Create Account</Text>
+      <Text style={styles.title}>Login</Text>
       <View>
-        <View>
-          <Text style={styles.categoryTitle}>Username</Text>
-          <TextInput 
-            style={[styles.textBox, { 
-              borderColor: isUsernameFocused ? "black" : "#cfcfcf",
-              borderWidth: isUsernameFocused ? 2 : 1,
-            }]}
-            placeholder="alpaca"
-            value={username}
-            onChangeText={setUsername}
-            onFocus={() => setIsUsernameFocused(true)}
-            onBlur={() => setIsUsernameFocused(false)}
-          />
-        </View>
-        <View>
-          <Text style={styles.categoryTitle}>Phone number</Text>
-          <TextInput 
-            style={[styles.textBox, { 
-              borderColor: isPhoneFocused ? "black" : "#cfcfcf",
-              borderWidth: isPhoneFocused ? 2 : 1,
-            }]}
-            placeholder="0499999999"
-            value={phone}
-            onChangeText={setPhone}
-            onFocus={() => setIsPhoneFocused(true)}
-            onBlur={() => setIsPhoneFocused(false)}
-          />
-        </View>
         <View>
           <Text style={styles.categoryTitle}>Email</Text>
           <TextInput 
@@ -73,7 +47,7 @@ const Login = (props: Props) => {
               borderColor: isEmailFocused ? "black" : "#cfcfcf",
               borderWidth: isEmailFocused ? 2 : 1,
             }]}
-            placeholder="alpaca@gmail.com"
+            placeholder="email"
             value={email}
             onChangeText={setEmail}
             onFocus={() => setIsEmailFocused(true)}
@@ -87,7 +61,7 @@ const Login = (props: Props) => {
               borderColor: isPwdFocused ? "black" : "#cfcfcf",
               borderWidth: isPwdFocused ? 2 : 1,
             }]}
-            placeholder="hjpakla10k"
+            placeholder="password"
             value={password}
             onChangeText={setPassword}
             onFocus={() => setIsPwdFocused(true)}
@@ -98,21 +72,24 @@ const Login = (props: Props) => {
       </View>
       <Pressable 
         style={({ pressed }) => [
-          styles.signUpButton,
+          styles.signInButton,
           { 
             backgroundColor: pressed ? "gray" : "black",
             borderColor: pressed ? "gray" : "black",
           },
         ]} 
-        onPress={signUp}
+        onPress={login}
         >
         <Text style={[styles.signUpBtnText, {
           color: isButtonPressed ? "gray" : "white",
-        }]}>Sign Up</Text>
+        }]}>Login</Text>
       </Pressable>
-      <Text style={styles.signin}>Already have an account?
-        <Text style={styles.signinLink}> Sign In</Text>
-      </Text>
+      <View style={styles.signUpContainer}>
+        <Text>Don't have an account?</Text>
+        <Pressable onPress={signUp}>
+          <Text style={styles.signUpLink}> Sign Up</Text>
+        </Pressable>
+      </View>
     </View>
   );
 };
@@ -145,7 +122,7 @@ const styles = StyleSheet.create({
     marginTop: 5,
     fontSize: 17,
   },
-  signUpButton: {
+  signInButton: {
     borderColor: "black",
     borderRadius: 10,
     borderWidth: 1,
@@ -158,10 +135,11 @@ const styles = StyleSheet.create({
   signUpBtnText: {
     fontSize: 17
   },
-  signin: {
-    marginTop: 40,
-  },  
-  signinLink: {
+  signUpLink: {
     color: "blue",
+  },
+  signUpContainer: {
+    flexDirection: "row",
+    marginTop: 40,
   },
 });
