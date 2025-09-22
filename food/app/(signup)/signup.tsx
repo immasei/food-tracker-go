@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   StyleSheet,
   Text,
@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import PhoneInput from 'react-native-phone-number-input';
 
 import firebaseApp from "../../config/firebaseConfig";
 import { getFirestore, collection, getDocs } from "firebase/firestore";
@@ -30,6 +31,8 @@ const SignUp = (props: Props) => {
   const [isUsernameFocused, setIsUsernameFocused] = useState(false);
   const [isPhoneFocused, setIsPhoneFocused] = useState(false);
   const [isButtonPressed, setIsButtonPressed] = useState(false);
+
+  const phoneInput = useRef(null);
 
   const router = useRouter();
 
@@ -59,7 +62,24 @@ const SignUp = (props: Props) => {
             onBlur={() => setIsUsernameFocused(false)}
           />
         </View>
+
         <View>
+          <Text style={styles.categoryTitle}>Phone number</Text>
+          <PhoneInput
+            ref={phoneInput}
+            defaultValue={phone}
+            value={phone}
+            defaultCode="AU"
+            layout="first"
+            onChangeFormattedText={setPhone}
+            containerStyle={styles.phoneContainer}
+            textContainerStyle={styles.phoneTextContainer}
+            textInputStyle={styles.phoneText}
+            codeTextStyle={styles.phoneCode}
+          />
+        </View>
+
+        {/* <View>
           <Text style={styles.categoryTitle}>Phone number</Text>
           <TextInput 
             style={[styles.textBox, { 
@@ -72,7 +92,7 @@ const SignUp = (props: Props) => {
             onFocus={() => setIsPhoneFocused(true)}
             onBlur={() => setIsPhoneFocused(false)}
           />
-        </View>
+        </View> */}
         <View>
           <Text style={styles.categoryTitle}>Email</Text>
           <TextInput 
@@ -146,10 +166,26 @@ const styles = StyleSheet.create({
     fontSize: 17,
     color: "#696969",
   },
+  phoneContainer: {
+    width: 280,
+    height: 50,
+    borderColor: "#cfcfcf",
+    marginBottom: 10,
+    marginTop: 5,
+  },
+  phoneTextContainer: {
+    paddingVertical: 0,
+  },
+  phoneText: {
+    fontSize: 16,
+  },
+  phoneCode: {
+    fontSize: 16,
+  },
   textBox: {
     borderRadius: 10,
-    width: 250,
-    height: 40,
+    width: 280,
+    height: 50,
     paddingLeft: 10,
     marginBottom: 10,
     marginTop: 5,
