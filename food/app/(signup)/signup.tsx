@@ -12,10 +12,12 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
 import firebaseApp from "../../config/firebaseConfig";
-import { getFirestore, collection, getDocs } from "firebase/firestore";
+import { createUserWithEmailAndPassword, getAuth } from "firebase/auth";
+import { getFirestore, collection, getDocs, addDoc, setDoc, doc } from "firebase/firestore";
 
 // get a reference to the database to use it in this file
 const db = getFirestore(firebaseApp);
+const auth = getAuth(firebaseApp);
 
 type Props = {};
 
@@ -31,13 +33,37 @@ const SignUp = (props: Props) => {
   const [isPhoneFocused, setIsPhoneFocused] = useState(false);
   const [isButtonPressed, setIsButtonPressed] = useState(false);
 
-  const phoneInput = useRef(null);
-
   const router = useRouter();
 
-  const signUp = () => {
+  async function signUp() {
+    // check if all fields are filled
+    if (email === "" || password === "" || username === "" || phone === "") {
+      return "Please fill all the fields";
+    }
     
-  };
+    // check if email already exists
+
+    try {
+      // create a new user
+      const newAcc = await createUserWithEmailAndPassword(auth, email, password);
+      const newUser = newAcc.user;
+
+      const newDoc = await setDoc(doc(db, "users", newUser.uid), {
+        userid: newUser.uid,
+        username: username,
+        password: password,
+        email: email,
+        phone_no: phone,
+        createdAt: new Date()
+      });
+
+      // redirect to home page after successfully signing up
+      // router.push("/tracker");
+    } catch (e) {
+      console.error("Signing up error: ", e);
+    }
+    
+  }
 
   const signIn = () => {
     router.push("/login");
@@ -48,13 +74,13 @@ const SignUp = (props: Props) => {
       <Text style={styles.title}>Create Account</Text>
       <View>
         <View>
-          <Text style={styles.categoryTitle}>Username</Text>
+          {/* <Text style={styles.categoryTitle}>Username</Text> */}
           <TextInput 
             style={[styles.textBox, { 
               borderColor: isUsernameFocused ? "black" : "#cfcfcf",
               borderWidth: isUsernameFocused ? 2 : 1,
             }]}
-            placeholder="username"
+            placeholder="Username"
             value={username}
             onChangeText={setUsername}
             onFocus={() => setIsUsernameFocused(true)}
@@ -62,13 +88,13 @@ const SignUp = (props: Props) => {
           />
         </View>
         <View>
-          <Text style={styles.categoryTitle}>Phone number</Text>
+          {/* <Text style={styles.categoryTitle}>Phone number</Text> */}
           <TextInput 
             style={[styles.textBox, { 
               borderColor: isPhoneFocused ? "black" : "#cfcfcf",
               borderWidth: isPhoneFocused ? 2 : 1,
             }]}
-            placeholder="phone number"
+            placeholder="Phone Number"
             value={phone}
             onChangeText={setPhone}
             onFocus={() => setIsPhoneFocused(true)}
@@ -76,13 +102,13 @@ const SignUp = (props: Props) => {
           />
         </View>
         <View>
-          <Text style={styles.categoryTitle}>Email</Text>
+          {/* <Text style={styles.categoryTitle}>Email</Text> */}
           <TextInput 
             style={[styles.textBox, { 
               borderColor: isEmailFocused ? "black" : "#cfcfcf",
               borderWidth: isEmailFocused ? 2 : 1,
             }]}
-            placeholder="email"
+            placeholder="Email"
             value={email}
             onChangeText={setEmail}
             onFocus={() => setIsEmailFocused(true)}
@@ -90,13 +116,13 @@ const SignUp = (props: Props) => {
           />
         </View>
         <View>
-          <Text style={styles.categoryTitle}>Password</Text>
+          {/* <Text style={styles.categoryTitle}>Password</Text> */}
           <TextInput 
             style={[styles.textBox, { 
               borderColor: isPwdFocused ? "black" : "#cfcfcf",
               borderWidth: isPwdFocused ? 2 : 1,
             }]}
-            placeholder="password"
+            placeholder="Password"
             value={password}
             onChangeText={setPassword}
             onFocus={() => setIsPwdFocused(true)}
@@ -139,7 +165,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   title: {
-    fontSize: 31,
+    fontSize: 35,
     fontWeight: "bold",
     marginBottom: 70,
     textAlign: "center",
@@ -155,20 +181,20 @@ const styles = StyleSheet.create({
     paddingLeft: 10,
     marginBottom: 10,
     marginTop: 5,
-    fontSize: 17,
+    fontSize: 20,
   },
   signUpButton: {
     borderColor: "black",
     borderRadius: 10,
     borderWidth: 1,
-    width: 250,
-    height: 40,
+    width: 280,
+    height: 50,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 25
   },
   signUpBtnText: {
-    fontSize: 17
+    fontSize: 22
   },
   signinLink: {
     color: "blue",
