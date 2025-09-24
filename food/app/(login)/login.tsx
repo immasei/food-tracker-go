@@ -11,10 +11,12 @@ import {
 import { useRouter } from "expo-router";
 
 import firebaseApp from "../../config/firebaseConfig";
+import { signInWithEmailAndPassword, getAuth } from "firebase/auth";
 import { getFirestore, collection, getDocs } from "firebase/firestore";
 
 // get a reference to the database to use it in this file
 const db = getFirestore(firebaseApp);
+const auth = getAuth(firebaseApp);
 
 type Props = {};
 
@@ -28,9 +30,30 @@ const Login = (props: Props) => {
 
   const router = useRouter();
 
-  const login = () => {
-    
-  };
+  async function login() {
+    // check if all fields are filled
+    if (email === "" || password === "") {
+      return "Please fill all the fields";
+    }
+
+    // log in if user exists, otherwise, display error
+    try {
+      const user = await signInWithEmailAndPassword(auth, email, password);
+      console.log("Signed in as:", user.user.uid);
+
+      router.push("/FoodList");
+    } catch (e: any) {
+      if (e.code === "auth/user-not-found") {
+        console.log("User does not exist");
+        return "User does not exist";
+      } else if (e.code === "auth/wrong-password") {
+        console.log("Either email or password is wrong");
+        return "Either email or password is wrong";
+      } else {
+        console.log("Sign in error: ", e);
+      }
+    }
+  }
 
   const signUp = () => {
     router.push("/signup");
@@ -40,39 +63,37 @@ const Login = (props: Props) => {
     <View style={styles.container}>
       <Text style={styles.title}>Login</Text>
       <View>
-        <View>
-          <Text style={styles.categoryTitle}>Email</Text>
-          <TextInput 
-            style={[styles.textBox, { 
-              borderColor: isEmailFocused ? "black" : "#cfcfcf",
-              borderWidth: isEmailFocused ? 2 : 1,
-            }]}
-            placeholder="email"
-            value={email}
-            onChangeText={setEmail}
-            onFocus={() => setIsEmailFocused(true)}
-            onBlur={() => setIsEmailFocused(false)}
-          />
-        </View>
-        <View>
-          <Text style={styles.categoryTitle}>Password</Text>
-          <TextInput 
-            style={[styles.textBox, { 
-              borderColor: isPwdFocused ? "black" : "#cfcfcf",
-              borderWidth: isPwdFocused ? 2 : 1,
-            }]}
-            placeholder="password"
-            value={password}
-            onChangeText={setPassword}
-            onFocus={() => setIsPwdFocused(true)}
-            onBlur={() => setIsPwdFocused(false)}
-            secureTextEntry={true}
-          />
-        </View>
+        {/* <Text style={styles.categoryTitle}>Email</Text> */}
+        <TextInput 
+          style={[styles.textBox, { 
+            borderColor: isEmailFocused ? "black" : "#cfcfcf",
+            borderWidth: isEmailFocused ? 2 : 1,
+          }]}
+          placeholder="Email"
+          value={email}
+          onChangeText={setEmail}
+          onFocus={() => setIsEmailFocused(true)}
+          onBlur={() => setIsEmailFocused(false)}
+        />
+      </View>
+      <View>
+        {/* <Text style={styles.categoryTitle}>Password</Text> */}
+        <TextInput 
+          style={[styles.textBox, { 
+            borderColor: isPwdFocused ? "black" : "#cfcfcf",
+            borderWidth: isPwdFocused ? 2 : 1,
+          }]}
+          placeholder="Password"
+          value={password}
+          onChangeText={setPassword}
+          onFocus={() => setIsPwdFocused(true)}
+          onBlur={() => setIsPwdFocused(false)}
+          secureTextEntry={true}
+        />
       </View>
       <Pressable 
         style={({ pressed }) => [
-          styles.signInButton,
+          styles.loginButton,
           { 
             backgroundColor: pressed ? "gray" : "black",
             borderColor: pressed ? "gray" : "black",
@@ -80,7 +101,7 @@ const Login = (props: Props) => {
         ]} 
         onPress={login}
         >
-        <Text style={[styles.signUpBtnText, {
+        <Text style={[styles.loginBtnText, {
           color: isButtonPressed ? "gray" : "white",
         }]}>Login</Text>
       </Pressable>
@@ -104,7 +125,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   title: {
-    fontSize: 31,
+    fontSize: 35,
     fontWeight: "bold",
     marginBottom: 70,
     textAlign: "center",
@@ -115,25 +136,25 @@ const styles = StyleSheet.create({
   },
   textBox: {
     borderRadius: 10,
-    width: 250,
-    height: 40,
+    width: 280,
+    height: 50,
     paddingLeft: 10,
     marginBottom: 10,
     marginTop: 5,
-    fontSize: 17,
+    fontSize: 20,
   },
-  signInButton: {
+  loginButton: {
     borderColor: "black",
     borderRadius: 10,
     borderWidth: 1,
-    width: 250,
-    height: 40,
+    width: 280,
+    height: 50,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 25
   },
-  signUpBtnText: {
-    fontSize: 17
+  loginBtnText: {
+    fontSize: 22
   },
   signUpLink: {
     color: "blue",
