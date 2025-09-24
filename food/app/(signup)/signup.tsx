@@ -40,25 +40,23 @@ const SignUp = (props: Props) => {
     if (email === "" || password === "" || username === "" || phone === "") {
       return "Please fill all the fields";
     }
-    
-    // check if email already exists
 
     try {
       // create a new user
+      // createUserWithEmailAndPassword automatically checks for errors like email not existing so we don't need to check for them manually
       const newAcc = await createUserWithEmailAndPassword(auth, email, password);
       const newUser = newAcc.user;
 
       const newDoc = await setDoc(doc(db, "users", newUser.uid), {
         userid: newUser.uid,
         username: username,
-        password: password,
         email: email,
         phone_no: phone,
         createdAt: new Date()
       });
 
       // redirect to home page after successfully signing up
-      // router.push("/tracker");
+      router.push("/FoodList");
     } catch (e) {
       console.error("Signing up error: ", e);
     }
