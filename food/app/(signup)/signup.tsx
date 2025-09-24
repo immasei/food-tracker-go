@@ -10,7 +10,6 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import PhoneInput from 'react-native-phone-number-input';
 
 import firebaseApp from "../../config/firebaseConfig";
 import { getFirestore, collection, getDocs } from "firebase/firestore";
@@ -62,24 +61,7 @@ const SignUp = (props: Props) => {
             onBlur={() => setIsUsernameFocused(false)}
           />
         </View>
-
         <View>
-          <Text style={styles.categoryTitle}>Phone number</Text>
-          <PhoneInput
-            ref={phoneInput}
-            defaultValue={phone}
-            value={phone}
-            defaultCode="AU"
-            layout="first"
-            onChangeFormattedText={setPhone}
-            containerStyle={styles.phoneContainer}
-            textContainerStyle={styles.phoneTextContainer}
-            textInputStyle={styles.phoneText}
-            codeTextStyle={styles.phoneCode}
-          />
-        </View>
-
-        {/* <View>
           <Text style={styles.categoryTitle}>Phone number</Text>
           <TextInput 
             style={[styles.textBox, { 
@@ -92,7 +74,7 @@ const SignUp = (props: Props) => {
             onFocus={() => setIsPhoneFocused(true)}
             onBlur={() => setIsPhoneFocused(false)}
           />
-        </View> */}
+        </View>
         <View>
           <Text style={styles.categoryTitle}>Email</Text>
           <TextInput 
@@ -165,22 +147,6 @@ const styles = StyleSheet.create({
   categoryTitle: {
     fontSize: 17,
     color: "#696969",
-  },
-  phoneContainer: {
-    width: 280,
-    height: 50,
-    borderColor: "#cfcfcf",
-    marginBottom: 10,
-    marginTop: 5,
-  },
-  phoneTextContainer: {
-    paddingVertical: 0,
-  },
-  phoneText: {
-    fontSize: 16,
-  },
-  phoneCode: {
-    fontSize: 16,
   },
   textBox: {
     borderRadius: 10,
