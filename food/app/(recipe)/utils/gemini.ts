@@ -6,12 +6,6 @@ import { GoogleGenAI, GenerateContentConfig } from '@google/genai';
 // proxy or an environment variable exposed securely.
 const API_KEY = 'AIzaSyA9VWJhQyPL5KTLc2PcGU4Xv1ZHTwl0KPM';
 
-if (!API_KEY || API_KEY === 'AIzaSyA9VWJhQyPL5KTLc2PcGU4Xv1ZHTwl0KPM') {
-  console.error("GEMINI_API_KEY is not set. Please update utils/gemini.ts.");
-  // Throwing an error for development visibility
-  throw new Error("GEMINI_API_KEY is not set."); 
-}
-
 const ai = new GoogleGenAI({ apiKey: API_KEY });
 const model = 'gemini-2.5-flash'; // A good, fast model for text generation
 
