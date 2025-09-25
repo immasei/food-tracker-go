@@ -13,8 +13,13 @@ import Markdown from 'react-native-markdown-display';
 import { router } from "expo-router";
 
 const RecipePage: React.FC = () => {
-    const { filteredSorted: ingredients } = useFoodItems("", () => {}); 
-
+    // const { filteredSorted: ingredients } = useFoodItems("", () => {}); 
+    const ingredients = [
+      { name: "Chicken Breast" }, 
+      { name: "Broccoli" }, 
+      { name: "Soy Sauce" }, 
+      { name: "Rice" }
+    ];
     const [recipe, setRecipe] = useState<string>("");
     const [loading, setLoading] = useState(true); 
     const [ingredientNames, setIngredientNames] = useState<string>("");
