@@ -28,9 +28,9 @@ const RootLayout = (props: Props) => {
           }}
         />
         <Tabs.Screen
-          name="externalwebview"
+          name="(recipe)"
           options={{
-            title: "Web",
+            title: "Recipe",
             tabBarIcon: () => <Ionicons size={24} name="browsers" />,
           }}
         />
