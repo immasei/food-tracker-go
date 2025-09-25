@@ -32,17 +32,19 @@ npm start
 - Sharing unwanted food with nearby app users.
 
 ### What is functioning
-- Food List main page is fully functioning. This out Minimum Viable Product (MVP).
-- Login/Signup functions are fully functioning. User data will synchonize to our Google Firebase backend and database.
-- User and Settings page have basic interfaces. User details can be displayed, but some backend functions are to be implement.
-- Camera page based on our mini project. Camera funtion is working.
+- Food List main page is fully functioning. This is our Minimum Viable Product (MVP).
+- Login/Signup functions are fully functioning. User data will synchronize to our Google Firebase backend and database.
+- User and Settings pages have basic interfaces. User details can be displayed, but some backend functions are to be implement.
+- Camera page based on our mini project. Camera function is working.
 - Recipe page is passing ingredients with prompts and able to receive the recipe.
 
 ### TODO items
-- Add backend function to many pages.
+- Add backend functions to many pages.
 - Fix the tab bar display problem.
-- (Optional) Add food sharing funciton.
+- Add AI receipt recognition function.
+- Add food sharing function.
 
 ### Current challenges
-- Recipe page need to pass dynamic ingredient since it is passing preset ingredient. Enable user to adjust prompt in high level.
-
+- Recipe page needs to pass dynamic ingredient since it is passing preset ingredient. Enable user to adjust prompt in high level.
+- Integrating a map SDK for food sharing function is challenging.
+- We are encountering a lot of bugs while creating new functions.
