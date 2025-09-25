@@ -1,5 +1,14 @@
 # COMP4216/COMP5216 Project
 
+## Installation guide
+cd food
+npm install
+npm install react-native-markdown-display
+npm install @google/genai
+
+All npm should be installed in project's food directory. You can start by
+npm start
+
 ## Food Tracker Go
 
 To address the food waste problem caused by food expiration, we propose to develop a mobile app to track the expiration dates of food items. Our main purpose is to help users consume food before it expires to avoid food waste by mobile phone notifications. The app has basic features including adding and management of food items. Then it will track the expiration dates and send reminder notifications. To minimize food waste as much as possible, we also plan to add an AI recipe recommendation function and a self-pick-up food sharing feature with users nearby.
