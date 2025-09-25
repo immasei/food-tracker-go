@@ -1,13 +1,21 @@
 # COMP4216/COMP5216 Project
 
 ## Installation guide
+# Installation
+
+To install the necessary packages for the AI Recipe feature, run the following commands in your project directory:
+
+```bash
 cd food
 npm install
 npm install react-native-markdown-display
 npm install @google/genai
+```
 
 All npm should be installed in project's food directory. You can start by
+```bash
 npm start
+```
 
 ## Food Tracker Go
 
