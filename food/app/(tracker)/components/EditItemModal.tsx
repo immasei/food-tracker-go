@@ -132,7 +132,7 @@ export default function EditItemModal({
 
 const styles = StyleSheet.create({
     input: {
-        flex: 1,
+        //flex: 1, // Fix input disappear problem on Android devices
         backgroundColor: "#FFF",
         borderRadius: 14,
         paddingHorizontal: 14,
