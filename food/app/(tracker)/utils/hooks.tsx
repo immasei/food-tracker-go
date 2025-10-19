@@ -17,11 +17,9 @@ export function useFoodItems(search: string, onAutoUnshare?: (n: number) => void
       orderBy("expiryDate", "asc")
     );
 
-    let first = true;
-
-    const unsub = onSnapshot(q, async (snap) => {
+    const unsub = onSnapshot(q, (snap) => {
       const rows: Food[] = snap.docs.map((d) => {
-        const x = d.data();
+        const x = d.data() as any;
         return {
           id: d.id,
           userId: x.userId,
@@ -33,29 +31,11 @@ export function useFoodItems(search: string, onAutoUnshare?: (n: number) => void
           updatedAt: x.updatedAt ? toISO(x.updatedAt) : undefined,
         };
       });
-
       setItems(rows);
-
-      if (first) {
-        first = false;
-        const toUnshare = rows.filter((i) => i.shared && isExpired(i.expiryDate));
-        if (toUnshare.length) {
-          const batch = writeBatch(db);
-          toUnshare.forEach((i) => {
-            batch.update(doc(db, "food", i.id), { shared: false, updatedAt: serverTimestamp() });
-          });
-          try {
-            await batch.commit();
-            onAutoUnshare?.(toUnshare.length);
-          } catch (e) {
-            console.warn("Auto-unshare failed", e);
-          }
-        }
-      }
     });
 
     return () => unsub();
-  }, [onAutoUnshare]);
+  }, []);
 
   const filteredSorted = useMemo(() => {
     const q = search.trim().toLowerCase();
