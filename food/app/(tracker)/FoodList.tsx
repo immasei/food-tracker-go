@@ -12,13 +12,14 @@ import { useFoodItems } from "./utils/hooks";
 const FoodListTab: React.FC = () => {
   const { show, Toast } = useToast();
   const [search, setSearch] = useState("");
-  const { filteredSorted } = useFoodItems(search, (n) => show("Expired items were unshared.", "warning"));
+ const { filteredSorted } = useFoodItems(search);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Food | null>(null);
 
   const [recentNames, setRecentNames] = useState<string[]>([]);
   const [recentCats, setRecentCats] = useState<string[]>([]);
+  
   useEffect(() => {
     (async () => {
       setRecentNames(await loadRecents(NAMES_KEY(USER_ID)));

@@ -7,7 +7,7 @@ import { db, USER_ID } from "./firebase";
 import { daysLeft, isExpired, toISO, toYMD } from "./dates";
 import { Food } from "../types/food";
 
-export function useFoodItems(search: string, onAutoUnshare?: (n: number) => void) {
+export function useFoodItems(search: string) {
   const [items, setItems] = useState<Food[]>([]);
 
   useEffect(() => {
