@@ -19,18 +19,27 @@ const RightActions = ({ onDelete }: { onDelete: () => void }) => (
     </View>
   );
 
-const statusStyle = (iso: string) => {
-    if (isExpired(iso)) 
-        return [styles.badge, styles.badgeExpired];
-    
-    const d = daysLeft(iso);
-    if (d <= 2) 
-        return [styles.badge, styles.badgeSoon];
-    
-    return [styles.badge, styles.badgeOk];
-  };
+// choose badge style based on expiry (null/empty = never expires)
+const statusStyle = (iso: string | null | undefined) => {
+  // no expiry date
+  if (!iso || !iso.trim?.())
+    return [styles.badge, styles.badgeNone];
 
-const statusText = (iso: string) => (isExpired(iso) ? "Expired" : `${daysLeft(iso)}d left`);
+  if (isExpired(iso)) 
+    return [styles.badge, styles.badgeExpired];
+    
+  const d = daysLeft(iso);
+  if (Number.isFinite(d) && d <= 2) 
+    return [styles.badge, styles.badgeSoon];
+    
+  return [styles.badge, styles.badgeOk];
+};
+
+// text for badge
+const statusText = (iso: string | null | undefined) => {
+  if (!iso || !iso.trim?.()) return "No expiry";
+  return isExpired(iso) ? "Expired" : `${daysLeft(iso)}d left`;
+};
 
 export default function FoodCard({ item, onPress, onDelete }: Props) {
   return (
@@ -69,6 +78,7 @@ const styles = StyleSheet.create({
   badgeExpired: { backgroundColor: "#FEE2E2", borderColor: "#FECACA" },
   badgeSoon: { backgroundColor: "#FEF3C7", borderColor: "#FDE68A" },
   badgeOk: { backgroundColor: "#D1FAE5", borderColor: "#A7F3D0" },
+  badgeNone: { backgroundColor: "#8a8a8a27", borderColor: "#bcbcbcff" },
 
   badgeShared: { backgroundColor: "#E0F2FE", borderColor: "#BAE6FD" },
   badgeSharedText: { fontSize: 12, fontWeight: "800", color: "#0369A1" },

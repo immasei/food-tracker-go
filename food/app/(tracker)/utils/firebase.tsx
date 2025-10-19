@@ -13,26 +13,35 @@ export async function deleteItem(id: string) {
 }
 
 export async function upsertItem(editing: Food) {
-  const { id, name, category, expiryDate, shared } = editing;
-  if (id) {
-    await updateDoc(doc(db, "food", id), {
+  const name = editing.name?.trim() || null;
+  const category = editing.category?.trim() || null;
+  const expiryDate = editing.expiryDate?.trim() || null; // null > never expires
+  const shared = !!editing.shared;
+
+  if (editing.id) {
+    await updateDoc(doc(db, "food", editing.id), {
       userId: USER_ID,
-      name, category, expiryDate,
-      shared: !!shared,
+      name, 
+      category, 
+      expiryDate,
+      shared,
       updatedAt: serverTimestamp(),
     });
   } else {
     await addDoc(collection(db, "food"), {
       userId: USER_ID,
-      name, category, expiryDate,
-      shared: !!shared,
+      name, 
+      category, 
+      expiryDate,
+      shared,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
   }
 
-  await saveRecent(NAMES_KEY(USER_ID), name);
-  await saveRecent(CATS_KEY(USER_ID), category);
+  // only store recents if non-empty
+  if (name) await saveRecent(NAMES_KEY(USER_ID), name);
+  if (category) await saveRecent(CATS_KEY(USER_ID), category);
 
   return {
     recentNames: await loadRecents(NAMES_KEY(USER_ID)),

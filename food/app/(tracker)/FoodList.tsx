@@ -59,13 +59,14 @@ const FoodListTab: React.FC = () => {
 
     const { id, name, expiryDate, category, shared } = editing;
 
-    if (!name.trim() || !expiryDate.trim() || !category.trim()) {
-      Alert.alert("Missing info", "Please fill all fields.");
-      return;
-    }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(expiryDate)) {
-      Alert.alert("Invalid date", "Use format YYYY-MM-DD.");
-      return;
+    // if expiryDate is provided, ensure YYYY-MM-DD. allow blank tho
+    if (expiryDate && expiryDate.trim().length > 0) {
+      const ok = /^\d{4}-\d{2}-\d{2}$/.test(expiryDate.trim());
+      if (!ok) {
+        Alert.alert("Invalid date", "Use format YYYY-MM-DD.");
+        // show("Invalid date", "danger");
+        return;
+      }
     }
 
     try {
