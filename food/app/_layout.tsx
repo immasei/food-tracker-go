@@ -14,38 +14,31 @@ const RootLayout = (props: Props) => {
     <SafeAreaProvider>
       <Tabs>
         <Tabs.Screen
-          name="index"
+          name="(tracker)"
           options={{
-            title: "Images",
-            tabBarIcon: () => <Ionicons size={24} name="image" />,
+            title: "Tracker",
+            tabBarIcon: () => <Ionicons size={24} name="pizza-outline" />,
           }}
         />
         <Tabs.Screen
-          name="camera"
+          name="(scanner)"
           options={{
-            title: "Camera",
-            tabBarIcon: () => <Ionicons size={24} name="camera" />,
+            title: "Scanner",
+            tabBarIcon: () => <Ionicons size={24} name="scan-outline" />,
           }}
         />
         <Tabs.Screen
           name="(recipe)"
           options={{
             title: "Recipe",
-            tabBarIcon: () => <Ionicons size={24} name="browsers" />,
-          }}
-        />
-        <Tabs.Screen
-          name="(tracker)"
-          options={{
-            title: "Food",
-            tabBarIcon: () => <Ionicons size={24} name="fast-food-outline" />,
+            tabBarIcon: () => <Ionicons size={24} name="sparkles-outline" />,
           }}
         />
         <Tabs.Screen
           name="(users)"
           options={{
             title: "Profile",
-            tabBarIcon: () => <Ionicons size={24} name="person" />,
+            tabBarIcon: () => <Ionicons size={24} name="person-outline" />,
           }}
         />
       </Tabs>
