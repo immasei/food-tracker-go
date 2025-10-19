@@ -42,11 +42,15 @@ const statusText = (iso: string | null | undefined) => {
 };
 
 export default function FoodCard({ item, onPress, onDelete }: Props) {
+  const displayName = item.name?.trim() || "(Unnamed)";
+  const displayCategory = item.category?.trim() || "—";
+  const displayExpiry = item.expiryDate?.trim() || "—";
+
   return (
     <Swipeable renderRightActions={() => <RightActions onDelete={onDelete} />}>
       <Pressable style={styles.card} onPress={onPress}>
         <View style={styles.cardHeader}>
-          <Text style={styles.itemName}>{item.name}</Text>
+          <Text style={styles.itemName}>{displayName}</Text>
           <View style={styles.headerChips}>
             {item.shared && (
               <View style={[styles.badge, styles.badgeShared]}>
@@ -61,11 +65,11 @@ export default function FoodCard({ item, onPress, onDelete }: Props) {
 
         <View style={styles.metaRow}>
           <Text style={styles.metaLabel}>Category</Text>
-          <Text style={styles.metaValue}>{item.category}</Text>
+          <Text style={styles.metaValue}>{displayCategory}</Text>
         </View>
         <View style={styles.metaRow}>
           <Text style={styles.metaLabel}>Expiry</Text>
-          <Text style={styles.metaValue}>{item.expiryDate}</Text>
+          <Text style={styles.metaValue}>{displayExpiry}</Text>
         </View>
       </Pressable>
     </Swipeable>
