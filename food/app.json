@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "comp5216",
-    "slug": "comp5216",
+    "name": "Food Tracker Go",
+    "slug": "COMP5216",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
