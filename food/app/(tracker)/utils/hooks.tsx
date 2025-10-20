@@ -3,11 +3,11 @@ import { useEffect, useMemo, useState } from "react";
 import {
   collection, query as fsQuery, onSnapshot, orderBy, where, writeBatch, doc, serverTimestamp,
 } from "firebase/firestore";
-import { db, USER_ID } from "./firebase";
+import { db } from "./firebase";
 import { daysLeft, isExpired, toISO, toYMD } from "./dates";
 import { Food } from "../types/food";
 
-export function useFoodItems(search: string) {
+export function useFoodItems(search: string, USER_ID:string) {
   const [items, setItems] = useState<Food[]>([]);
 
   useEffect(() => {

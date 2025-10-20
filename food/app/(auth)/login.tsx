@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useContext } from "react";
 import {
   StyleSheet,
   Text,
@@ -7,20 +7,25 @@ import {
   Pressable,
   FlatList,
   GestureResponderEvent,
+  TouchableWithoutFeedback,
+  Keyboard
 } from "react-native";
 import { useRouter } from "expo-router";
+import { AuthContext } from "../../contexts/AuthContext";
+import { useToast } from "../../components/Toast";
 
-import firebaseApp from "../../config/firebaseConfig";
-import { signInWithEmailAndPassword, getAuth } from "firebase/auth";
-import { getFirestore, collection, getDocs } from "firebase/firestore";
+// import firebaseApp from "../../config/firebaseConfig";
+// import { signInWithEmailAndPassword, getAuth } from "firebase/auth";
+// import { getFirestore, collection, getDocs } from "firebase/firestore";
 
 // get a reference to the database to use it in this file
-const db = getFirestore(firebaseApp);
-const auth = getAuth(firebaseApp);
+// const db = getFirestore(firebaseApp);
+// const auth = getAuth(firebaseApp);
 
 type Props = {};
 
 const Login = (props: Props) => {
+  const { show, Toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -29,28 +34,31 @@ const Login = (props: Props) => {
   const [isButtonPressed, setIsButtonPressed] = useState(false);
 
   const router = useRouter();
+  const context = useContext(AuthContext);
 
   async function login() {
     // check if all fields are filled
     if (email === "" || password === "") {
+      show("Please fill all the fields", "warning");
       return "Please fill all the fields";
     }
 
     // log in if user exists, otherwise, display error
     try {
-      const user = await signInWithEmailAndPassword(auth, email, password);
-      console.log("Signed in as:", user.user.uid);
+      await context.login(email, password);
+      router.push("/tracker");
 
-      router.push("/FoodList");
     } catch (e: any) {
       if (e.code === "auth/user-not-found") {
-        console.log("User does not exist");
-        return "User does not exist";
+        show("User does not exist", "danger");
       } else if (e.code === "auth/wrong-password") {
-        console.log("Either email or password is wrong");
-        return "Either email or password is wrong";
+        show("Either email or password is wrong", "danger");
+      } else if (e.code === "auth/invalid-email") {
+        show("Invalid email", "danger");
+      } else if (e.code === "auth/invalid-credential") {
+        show("Invalid credentials", "danger");
       } else {
-        console.log("Sign in error: ", e);
+        show("Login error: " + e, "danger");
       }
     }
   }
@@ -60,6 +68,7 @@ const Login = (props: Props) => {
   };
 
   return (
+    // <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
     <View style={styles.container}>
       <Text style={styles.title}>Login</Text>
       <View>
@@ -111,7 +120,9 @@ const Login = (props: Props) => {
           <Text style={styles.signUpLink}> Sign Up</Text>
         </Pressable>
       </View>
+      <Toast/>
     </View>
+    {/* </TouchableWithoutFeedback> */}
   );
 };
 

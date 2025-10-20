@@ -6,7 +6,7 @@ import EditItemModal from "../(tracker)/components/EditItemModal";
 import { shadow, palette } from "./styles";
 import { Food } from "../(tracker)/types/food";
 import { NAMES_KEY, CATS_KEY, loadRecents } from "../(tracker)/utils/recents";
-import { USER_ID, deleteItem, upsertItem } from "../(tracker)/utils/firebase";
+import { deleteItem, upsertItem } from "../(tracker)/utils/firebase";
 import { useFoodItems } from "../(tracker)/utils/hooks";
 import { generateRecipe } from "./utils/gemini";
 import Markdown from 'react-native-markdown-display';

@@ -1,18 +1,23 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState, useContext } from "react";
 import { View, Text, StyleSheet, Pressable, FlatList, Button, Image, ActivityIndicator, Platform } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
-import { cloudOCR, OCRResult } from "./ocr";
-import { deriveFromOCR } from "./parser";
-import { upsertItem, USER_ID } from "../(tracker)/utils/firebase";
+import { cloudOCR, OCRResult } from "./utils/ocr";
+import { deriveFromOCR } from "./utils/parser";
+import { upsertItem } from "../(tracker)/utils/firebase";
 import { useToast } from "../../components/Toast";
 import { palette, shadow, styles } from "./styles";
 import { NAMES_KEY, loadRecents } from "../(tracker)/utils/recents";
+import { AuthContext } from "../../contexts/AuthContext";
 
 type PhotoItem = { id: string; uri: string; ocr?: OCRResult; error?: string };
 type CameraRef = React.ComponentRef<typeof CameraView>;
 
 export default function ScannerScreen() {
   const { show, Toast } = useToast();
+  
+  const { user } = useContext(AuthContext);
+  const USER_ID = user.uid;
+
   const cameraRef = useRef<CameraRef | null>(null);
 
   const [permission, requestPermission] = useCameraPermissions();
@@ -96,7 +101,7 @@ export default function ScannerScreen() {
         expiryDate: guessExpiry ?? null,
         shared: false,
         createdAt: new Date().toISOString(),
-      } as any);
+      } as any, USER_ID);
       show("Added from scan.", "success");
       resetAll();
     } catch (e) {

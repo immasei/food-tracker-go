@@ -5,14 +5,11 @@ import { Food } from "../types/food";
 
 export const db = getFirestore(firebaseApp);
 
-// TODO: replace with auth.uid later
-export const USER_ID = "1";
-
 export async function deleteItem(id: string) {
   await deleteDoc(doc(db, "food", id));
 }
 
-export async function upsertItem(editing: Food) {
+export async function upsertItem(editing: Food, USER_ID: string) {
   const name = editing.name?.trim() || null;
   const category = editing.category?.trim() || null;
   const expiryDate = editing.expiryDate?.trim() || null; // null > never expires
