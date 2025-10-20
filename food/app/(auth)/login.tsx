@@ -122,7 +122,7 @@ const Login = (props: Props) => {
       </View>
       <Toast/>
     </View>
-    {/* </TouchableWithoutFeedback> */}
+    // </TouchableWithoutFeedback>
   );
 };
 
