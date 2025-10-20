@@ -45,8 +45,7 @@ const Login = (props: Props) => {
 
     // log in if user exists, otherwise, display error
     try {
-      const user = await context.login(email, password);
-      console.log("Signed in as:", user.user.uid);
+      await context.login(email, password);
       router.push("/tracker");
 
     } catch (e: any) {
@@ -69,7 +68,7 @@ const Login = (props: Props) => {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+    // <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
     <View style={styles.container}>
       <Text style={styles.title}>Login</Text>
       <View>
@@ -123,7 +122,7 @@ const Login = (props: Props) => {
       </View>
       <Toast/>
     </View>
-    </TouchableWithoutFeedback>
+    {/* </TouchableWithoutFeedback> */}
   );
 };
 

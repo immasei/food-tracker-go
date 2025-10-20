@@ -17,7 +17,7 @@ import { AuthContext } from "../../contexts/AuthContext";
 // import { Ionicons } from "@expo/vector-icons";
 import firebaseApp from "../../config/firebaseConfig";
 import { createUserWithEmailAndPassword, getAuth } from "firebase/auth";
-import { getFirestore, collection, getDocs, addDoc, setDoc, doc } from "firebase/firestore";
+import { getFirestore, collection, getDocs, addDoc, setDoc, doc, serverTimestamp, getDoc } from "firebase/firestore";
 
 // get a reference to the database to use it in this file
 const db = getFirestore(firebaseApp);
@@ -51,18 +51,7 @@ const SignUp = (props: Props) => {
     try {
       // create a new user
       // createUserWithEmailAndPassword automatically checks for errors like email not existing so we don't need to check for them manually
-      const newAcc = await context.signup(email, password);
-      const newUser = newAcc.user;
-
-      const newDoc = await setDoc(doc(db, "users", newUser.uid), {
-        userid: newUser.uid,
-        username: username,
-        email: email,
-        phone_no: phone,
-        createdAt: new Date()
-      });
-
-      // redirect to home page after successfully signing up
+      await context.signup(username, phone, email, password);
       router.push("/tracker");
     } catch (e: any) {
       if (e.code === "auth/invalid-email") {
@@ -81,7 +70,7 @@ const SignUp = (props: Props) => {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+    // <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
     
     <View style={styles.container}>
       <Text style={styles.title}>Create Account</Text>
@@ -166,7 +155,7 @@ const SignUp = (props: Props) => {
       </View>
       <Toast/>
     </View>
-    </TouchableWithoutFeedback>
+    // </TouchableWithoutFeedback>
     
   );
 };

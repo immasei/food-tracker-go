@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { Alert, FlatList, Pressable, SafeAreaView, Text, TextInput, View, StyleSheet, Platform } from "react-native";
 import { useToast } from "../../components/Toast";
 import FoodCard from "./components/FoodCard";
@@ -6,13 +6,18 @@ import EditItemModal from "./components/EditItemModal";
 import { shadow, palette } from "./styles";
 import { Food } from "./types/food";
 import { NAMES_KEY, CATS_KEY, loadRecents } from "./utils/recents";
-import { USER_ID, deleteItem, upsertItem } from "./utils/firebase";
+import { deleteItem, upsertItem } from "./utils/firebase";
 import { useFoodItems } from "./utils/hooks";
+import { AuthContext } from "../../contexts/AuthContext";
 
 const FoodListTab: React.FC = () => {
   const { show, Toast } = useToast();
+  
+  const { user } = useContext(AuthContext);
+  const USER_ID = user.uid;
+  
   const [search, setSearch] = useState("");
-  const { filteredSorted } = useFoodItems(search);
+  const { filteredSorted } = useFoodItems(search, USER_ID);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Food | null>(null);
@@ -70,7 +75,7 @@ const FoodListTab: React.FC = () => {
     }
 
     try {
-      const { recentNames, recentCats } = await upsertItem(editing);
+      const { recentNames, recentCats } = await upsertItem(editing, USER_ID);
       setRecentNames(recentNames);
       setRecentCats(recentCats);
 

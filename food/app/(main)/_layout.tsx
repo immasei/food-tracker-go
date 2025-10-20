@@ -8,7 +8,7 @@ type Props = {};
 const MainLayout = (props: Props) => {
   return (
     <AuthOnly>
-      <Tabs screenOptions={{ headerShown: false }}>
+      <Tabs>
 				<Tabs.Screen
 					name="tracker"
 					options={{

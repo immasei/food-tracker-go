@@ -11,7 +11,13 @@ const AuthLayout = (props: Props) => {
 
   return (
     <NoAuthOnly>
-      <Stack screenOptions={{ headerShown: false, animation: "none" }}>
+      <Stack
+        screenOptions={{
+          headerShown: true,
+          headerTitle: "",
+          headerShadowVisible: false, 
+        }}
+      >
         <Stack.Screen name="login" />
         <Stack.Screen name="signup" />
       </Stack>

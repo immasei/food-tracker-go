@@ -1,14 +1,16 @@
 // contexts/AuthContext.tsx
-import React, { createContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useEffect, useState } from "react";
 import {
   getAuth,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signOut,
-  User,
+  signOut
 } from "firebase/auth";
 import firebaseApp from "../config/firebaseConfig";
+import { getFirestore, collection, getDocs, addDoc, setDoc, doc, serverTimestamp, getDoc } from "firebase/firestore";
+
+const db = getFirestore(firebaseApp);
 
 export const AuthContext = createContext(undefined as any);
 
@@ -39,17 +41,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
   }
 
-  async function signup(email: string, password: string) {
-    await createUserWithEmailAndPassword(auth, email, password)
-      .then((cred) => {
-        setUser(cred.user);
-        console.log("Registered!!!");
-      })
-      .catch((error) => {
-        console.log("Register error!!!");
-        console.log(error?.message ?? error);
-        throw error;
+  async function signup(username: string, phone: string, email: string, password: string) {
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      const user = cred.user;
+
+      // add to firebase
+      await setDoc(doc(db, "users", user.uid), {
+        userid: user.uid,
+        username,
+        email,
+        phone_no: phone,
+        createdAt: serverTimestamp(),
       });
+
+      console.log("Registered!!!");
+      return user; 
+    } catch (error: any) {
+      console.log("Register error!!!");
+      console.log(error?.message ?? error);
+      throw error;
+    }
   }
 
   async function logout() {
