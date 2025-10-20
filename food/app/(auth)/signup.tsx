@@ -6,7 +6,9 @@ import {
   View,
   Pressable,
   FlatList,
-  GestureResponderEvent
+  GestureResponderEvent,
+  TouchableWithoutFeedback,
+  Keyboard
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useToast } from "../../components/Toast";
@@ -79,6 +81,8 @@ const SignUp = (props: Props) => {
   };
 
   return (
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+    
     <View style={styles.container}>
       <Text style={styles.title}>Create Account</Text>
       <View>
@@ -162,6 +166,8 @@ const SignUp = (props: Props) => {
       </View>
       <Toast/>
     </View>
+    </TouchableWithoutFeedback>
+    
   );
 };
 

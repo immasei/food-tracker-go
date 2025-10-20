@@ -7,6 +7,8 @@ import {
   Pressable,
   FlatList,
   GestureResponderEvent,
+  TouchableWithoutFeedback,
+  Keyboard
 } from "react-native";
 import { useRouter } from "expo-router";
 import { AuthContext } from "../../contexts/AuthContext";
@@ -67,6 +69,7 @@ const Login = (props: Props) => {
   };
 
   return (
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
     <View style={styles.container}>
       <Text style={styles.title}>Login</Text>
       <View>
@@ -120,6 +123,7 @@ const Login = (props: Props) => {
       </View>
       <Toast/>
     </View>
+    </TouchableWithoutFeedback>
   );
 };
 
