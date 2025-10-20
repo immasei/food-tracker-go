@@ -3,13 +3,13 @@ import { StyleSheet, Text, View, Image, TouchableOpacity, ScrollView, Pressable}
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import firebaseApp from "../../config/firebaseConfig";
-import { getFirestore, collection, getDocs } from "firebase/firestore";
+import { getFirestore, doc, getDoc } from "firebase/firestore";
 import { AuthContext } from "../../contexts/AuthContext";
 
 // Initialize Firebase Database
 const db = getFirestore(firebaseApp);
 
-// Data type for user data
+// Data type definition for user data
 type UserData = {
   id: string;
   username: string;
@@ -20,6 +20,7 @@ type UserData = {
 // Mock statistics data
 const statsData = {
   totalItems: 12,
+  sharingItems: 5,
   expiringItems: 3,
   expiredItems: 1,
   categories: 4
@@ -27,49 +28,61 @@ const statsData = {
 
 // User React Component
 const User = () => {
-  const router = useRouter();
-  const context = useContext(AuthContext);
+  const router = useRouter();  // Expo router for navigation
+  const { user, logout, authChecked } = useContext(AuthContext);   // Use AuthContext to get user info and logout method
   const [userData, setUserData] = useState<UserData | null>(null); // Variable to store user data
 
-  async function logout() {
-    await context.logout();
-    router.replace("/login");
-  }
-  // Fetch user data from Firebase
-  async function fetchUser() {
-    try {
-      const querySnapshot = await getDocs(collection(db, "users"));
-      if (!querySnapshot.empty) {
-        const doc = querySnapshot.docs[0]; // Temporary only get the first user
-        setUserData({
-          id: doc.id,
-          username: doc.data().username,
-          email: doc.data().email,
-          phone_no: doc.data().phone_no
-        });
-      }
-    } catch (error) {
-      console.error("Error fetching user:", error);
-    }
-  }
-
-  // Auto start
+  // Auto start:
   useEffect(() => {
-    fetchUser();
-  }, []);
+    // Check if user is logged in
+    if (!authChecked) return; // If auth state is not checked, skip the code.
+    if (!user?.uid) {     // If no user is logged in
+      setUserData(null);  // Reset user data variable
+      return;
+    }
 
-  // Method to return a user status card
+    // Fetch user data from Firebase
+    (async () => {
+      try {
+        const snap = await getDoc(doc(db, "users", user.uid));
+        if (snap.exists()) {
+          const data = snap.data() as Partial<UserData>;
+          setUserData({
+            id: snap.id,
+            username: data.username ?? "",
+            email: data.email ?? "",
+            phone_no: data.phone_no ?? ""
+          });
+        } else {
+          setUserData(null);
+        }
+      } catch (error) {
+        console.error("Error fetching user:", error);
+      }
+    })();
+  }, [authChecked, user?.uid]); // Re-run when authCheck state or user ID changes
+
+  // Method to return one card in user statistics area
   const StatCard = ({ title, value, icon }: { title: string; value: number; icon: string }) => (
     <View style={styles.statCard}>
-      <Ionicons name={icon as any} size={24} color="#2196F3" />
+      <Ionicons name={icon as any} size={24} color="#39f" />
       <Text style={styles.statValue}>{value}</Text>
       <Text style={styles.statTitle}>{title}</Text>
     </View>
   );
 
+  // Method to handle user logout
+  const handleLogout = async () => {
+    await logout();  // Call logout method from AuthContext
+    router.replace("/login");
+  };
+
+
+
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+
         {/* User information area */}
         <View style={styles.profileSection}>
           <View style={styles.avatarContainer}>
@@ -81,6 +94,7 @@ const User = () => {
           <Text style={styles.username}>{userData?.username || "Loading..."}</Text>
           <Text style={styles.userDetail}>Email: {userData?.email || ""}</Text>
           <Text style={styles.userDetail}>Mobile: {userData?.phone_no || ""}</Text>
+
           {/* Top settings button */}
           <TouchableOpacity
             style={styles.settingsButton}
@@ -92,12 +106,12 @@ const User = () => {
 
         {/* Statistics information area */}
         <View style={styles.statsContainer}>
-          <Text style={styles.statsTitle}>Food tracking statistics</Text>
+          <Text style={styles.statsTitle}>Food Tracking Statistics</Text>
           <View style={styles.statsGrid}>
-            <StatCard title="Total food" value={statsData.totalItems} icon="fast-food-outline" />
-            <StatCard title="Expiring" value={statsData.expiringItems} icon="timer-outline" />
-            <StatCard title="Expired" value={statsData.expiredItems} icon="warning-outline" />
-            <StatCard title="Food categories" value={statsData.categories} icon="apps-outline" />
+            <StatCard title="Total Food"    value={statsData.totalItems}    icon="fast-food-outline" />
+            <StatCard title="Sharing Food"  value={statsData.sharingItems}  icon="people-outline" />
+            <StatCard title="Expiring Food" value={statsData.expiringItems} icon="timer-outline" />
+            <StatCard title="Expired Food"  value={statsData.expiredItems}  icon="warning-outline" />
           </View>
         </View>
 
@@ -115,8 +129,9 @@ const User = () => {
         {/* Add bottom padding for scrolling */}
         <View style={styles.bottomPadding} />
 
-        <Pressable onPress={logout} style={styles.btnDanger}>
-          <Text style={styles.btnText}>Log Out</Text>
+        {/* Log out button */}
+        <Pressable onPress={handleLogout} style={styles.logoutButton}>
+          <Text style={styles.logoutButtonText}>Log Out</Text>
         </Pressable>
       </ScrollView>
     </View>
@@ -127,16 +142,6 @@ export default User;
 
 // Style sheet
 const styles = StyleSheet.create({
-  btnDanger: {
-    backgroundColor: "#EF4444",
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  btnText: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 16,
-  },
   container: {
     flex: 1,
     backgroundColor: "#f5f5f5",
@@ -250,6 +255,16 @@ const styles = StyleSheet.create({
   settingsText: {
     fontSize: 18,
     color: '#333',
+  },
+  logoutButton: {
+    backgroundColor: "#e55",
+    paddingVertical: 16,
+    alignItems: "center",
+  },
+  logoutButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 16,
   },
   quickActions: {
     flexDirection: 'row',
