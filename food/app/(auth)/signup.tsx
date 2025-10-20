@@ -55,11 +55,13 @@ const SignUp = (props: Props) => {
       router.push("/tracker");
     } catch (e: any) {
       if (e.code === "auth/invalid-email") {
-        show("Invalid email", "danger");
+        show("ERR: Invalid email", "danger");
       } else if (e.code === "auth/weak-password") {
-        show("Weak password: should be at least 6 characters", "danger");
+        show("ERR: Password should be at least 6 characters", "danger");
+      } else if (e.code === "auth/email-already-in-use") {
+        show("ERR: Email is already in use", "danger");
       } else {
-        show("Sign up error: " + e, "danger");
+        show("ERR: Sign up error: " + e, "danger");
       }
     }
     

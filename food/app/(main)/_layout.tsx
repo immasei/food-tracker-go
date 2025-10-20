@@ -33,7 +33,7 @@ const MainLayout = (props: Props) => {
 				<Tabs.Screen
 					name="profile"
 					options={{
-						title: "profile",
+						title: "Profile",
 						tabBarIcon: () => <Ionicons size={24} name="person-outline" />,
 					}}
 				/>
