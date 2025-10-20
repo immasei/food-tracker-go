@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, StyleSheet, Switch, ScrollView, TouchableOpacity } from 'react-native';
-//import DateTimePicker from '@react-native-community/datetimepicker';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-//import { Slider } from '@rneui/themed';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from "expo-router";
+import { AuthContext } from "../../contexts/AuthContext";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+//import DateTimePicker from '@react-native-community/datetimepicker';
+//import { Slider } from '@rneui/themed';
 
 // Interface for settings data
 interface SettingsState {
@@ -14,8 +16,13 @@ interface SettingsState {
   showExpiringFirst: boolean;
 }
 
+
+
 // Settings React Component
 export default function Settings() {
+  const router = useRouter();  // Expo router for url jumping
+  const { logout } = useContext(AuthContext);     // Use AuthContext to get logout method
+
   // Variable to store settings data
   const [settings, setSettings] = useState<SettingsState>({
     enableNotifications: true,
@@ -72,6 +79,14 @@ export default function Settings() {
       handleSettingChange('notifyTime', selectedDate);
     }
   };
+
+  // Method to handle user logout
+  const handleLogout = async () => {
+    await logout();  // Call logout method from AuthContext
+    router.replace("/login");
+  };
+
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -145,6 +160,14 @@ export default function Settings() {
             />
           </View>
         </View>
+
+        {/* Log out button */}
+        <View style={styles.logoutButton}>
+          <TouchableOpacity onPress={handleLogout}>
+            <Text style={styles.logoutText}>Log Out</Text>
+          </TouchableOpacity>
+        </View>
+
       </ScrollView>
     </SafeAreaView>
   );
@@ -154,7 +177,7 @@ export default function Settings() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f1f2f3',
   },
   scrollView: {
     flex: 1,
@@ -162,12 +185,15 @@ const styles = StyleSheet.create({
   section: {
     backgroundColor: 'white',
     marginVertical: 10,
+    marginHorizontal: 16,
     paddingHorizontal: 16,
     paddingTop: 12,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: '#eee',
     borderRadius: 20,
-    marginHorizontal: 16,
+    shadowColor: "#bbb",
+    shadowRadius: 5,
+    elevation: 5,
   },
   sectionTitle: {
     fontSize: 18,
@@ -198,5 +224,21 @@ const styles = StyleSheet.create({
   },
   sliderTrack: {
     height: 4,
+  },
+  logoutButton: {
+    marginVertical: 40,
+    marginHorizontal: 20,
+    borderRadius: 20,
+    paddingVertical: 15,
+    alignItems: "center",
+    backgroundColor: "#fdd",
+    shadowColor: "#fdd",
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  logoutText: {
+    color: "#f00",
+    fontWeight: "600",
+    fontSize: 16,
   },
 });
