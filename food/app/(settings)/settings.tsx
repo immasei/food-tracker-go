@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Switch, ScrollView, TouchableOpacity } from 'react-native';
-//import DateTimePicker from '@react-native-community/datetimepicker';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-//import { Slider } from '@rneui/themed';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+//import DateTimePicker from '@react-native-community/datetimepicker';
+//import { Slider } from '@rneui/themed';
 
 // Interface for settings data
 interface SettingsState {
@@ -154,7 +154,7 @@ export default function Settings() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f1f2f3',
   },
   scrollView: {
     flex: 1,
@@ -162,12 +162,15 @@ const styles = StyleSheet.create({
   section: {
     backgroundColor: 'white',
     marginVertical: 10,
+    marginHorizontal: 16,
     paddingHorizontal: 16,
     paddingTop: 12,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: '#eee',
     borderRadius: 20,
-    marginHorizontal: 16,
+    shadowColor: "#bbb",
+    shadowRadius: 5,
+    elevation: 5,
   },
   sectionTitle: {
     fontSize: 18,

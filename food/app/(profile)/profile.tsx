@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useContext } from "react";
-import { StyleSheet, Text, View, Image, TouchableOpacity, ScrollView, Pressable} from "react-native";
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Pressable} from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import firebaseApp from "../../config/firebaseConfig";
-import { getFirestore, doc, getDoc } from "firebase/firestore";
+import { getFirestore, doc, getDoc, collection, getDocs, query, where } from "firebase/firestore";
 import { AuthContext } from "../../contexts/AuthContext";
 
 // Initialize Firebase Database
@@ -15,24 +15,40 @@ type UserData = {
   username: string;
   email: string;
   phone_no: string;
+  taste_pref: string;
+  allergy_info: string;
 };
 
-// Mock statistics data
-const statsData = {
-  totalItems: 12,
-  sharingItems: 5,
-  expiringItems: 3,
-  expiredItems: 1,
-  categories: 4
+// Data type definition for food list statistics
+type FoodStats = {
+  totalItems: number;
+  sharingItems: number;
+  expiringItems: number;
+  expiredItems: number;
+  categories: number;
 };
 
-// User React Component
-const User = () => {
+// Empty statistics constant to initialize food stats
+const EMPTY_STATS: FoodStats = {
+  totalItems: 0,
+  sharingItems: 0,
+  expiringItems: 0,
+  expiredItems: 0,
+  categories: 0,
+};
+
+// Number of days to define expiring soon food. Can be added to settings later.
+const EXPIRING_WINDOW_DAYS = 3;
+
+// Profile React Component
+const Profile = () => {
   const router = useRouter();  // Expo router for navigation
-  const { user, logout, authChecked } = useContext(AuthContext);   // Use AuthContext to get user info and logout method
-  const [userData, setUserData] = useState<UserData | null>(null); // Variable to store user data
+  const { user, logout, authChecked } = useContext(AuthContext);     // Use AuthContext to get user info and logout method
+  const [userData, setUserData] = useState<UserData | null>(null);   // Variable to store user data
+  const [stats, setStats] = useState<FoodStats>({ ...EMPTY_STATS }); // Variable to store food statistics
+  const [statsLoading, setStatsLoading] = useState(true);  // Variable to indicate if stats are loading
 
-  // Auto start:
+  // Conditional auto-start 1:
   useEffect(() => {
     // Check if user is logged in
     if (!authChecked) return; // If auth state is not checked, skip the code.
@@ -44,14 +60,18 @@ const User = () => {
     // Fetch user data from Firebase
     (async () => {
       try {
-        const snap = await getDoc(doc(db, "users", user.uid));
-        if (snap.exists()) {
-          const data = snap.data() as Partial<UserData>;
+        const snapshot1 = await getDoc(doc(db, "users", user.uid));
+        if (snapshot1.exists()) {
+          const data = snapshot1.data() as Partial<UserData>;
+          const tastePref = typeof data.taste_pref === "string" ? data.taste_pref : "";
+          const allergyInfo = typeof data.allergy_info === "string" ? data.allergy_info : "";
           setUserData({
-            id: snap.id,
+            id: snapshot1.id,
             username: data.username ?? "",
             email: data.email ?? "",
-            phone_no: data.phone_no ?? ""
+            phone_no: data.phone_no ?? "",
+            taste_pref: tastePref,
+            allergy_info: allergyInfo,
           });
         } else {
           setUserData(null);
@@ -62,8 +82,101 @@ const User = () => {
     })();
   }, [authChecked, user?.uid]); // Re-run when authCheck state or user ID changes
 
+  // Conditional auto-start 2:
+  useEffect(() => {
+    // Check to ensure user is logged in before querying database
+    if (!authChecked) return;
+    if (!user?.uid) {
+      setStats({ ...EMPTY_STATS });
+      setStatsLoading(false);
+      return;
+    }
+
+    let cancelled = false; // Cancellation flag for async operation
+
+    // Fetch food statistics from Firebase
+    (async () => {
+      setStatsLoading(true); // Set loading state to prevent flicker
+      try {
+        const foodQuery = query(collection(db, "food"), where("userId", "==", user.uid));
+        const snapshot2 = await getDocs(foodQuery);
+        const totals: FoodStats = { ...EMPTY_STATS };
+        const categories = new Set<string>();
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const soon = new Date(today);
+        soon.setDate(today.getDate() + EXPIRING_WINDOW_DAYS);
+
+        // Function to parse expiry date from various formats
+        const parseExpiryDate = (value: unknown): Date | null => {
+          if (typeof value === "string" && value.trim().length > 0) {
+            const dt = new Date(value);
+            return Number.isNaN(dt.getTime()) ? null : dt;
+          }
+          if (value && typeof value === "object" && typeof (value as any).toDate === "function") {
+            const dt = (value as any).toDate();
+            return dt instanceof Date && !Number.isNaN(dt.getTime()) ? dt : null;
+          }
+          return null;
+        };
+
+        // Loop through each food item to calculate statistics
+        snapshot2.forEach((docSnap) => {
+          const data = docSnap.data() ?? {};
+
+          // Count total items
+          totals.totalItems += 1;
+
+          // Count sharing items
+          if (data.shared === true) {
+            totals.sharingItems += 1;
+          }
+
+          // Collect unique categories
+          if (typeof data.category === "string") {
+            const normalizedCategory = data.category.trim().toLowerCase();
+            if (normalizedCategory.length > 0) {
+              categories.add(normalizedCategory);
+            }
+          }
+
+          // Check expiry status and count expiring & expired items
+          const expiry = parseExpiryDate((data as any).expiryDate);
+          if (expiry) {
+            if (expiry < today) {
+              totals.expiredItems += 1;
+            } else if (expiry <= soon) {
+              totals.expiringItems += 1;
+            }
+          }
+        });
+
+        totals.categories = categories.size;
+
+        // Save data
+        if (!cancelled) {
+          setStats(totals);
+        }
+      } catch (error) {
+        console.error("Error fetching food stats:", error);
+        if (!cancelled) {
+          setStats({ ...EMPTY_STATS });
+        }
+      } finally {
+        if (!cancelled) {
+          setStatsLoading(false); // Set back loading state
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true; // Set cancellation flag on cleanup
+    };
+  }, [authChecked, user?.uid]);
+
   // Method to return one card in user statistics area
-  const StatCard = ({ title, value, icon }: { title: string; value: number; icon: string }) => (
+  const StatCard = ({ title, value, icon }: { title: string; value: number | string; icon: string }) => (
     <View style={styles.statCard}>
       <Ionicons name={icon as any} size={24} color="#39f" />
       <Text style={styles.statValue}>{value}</Text>
@@ -77,6 +190,9 @@ const User = () => {
     router.replace("/login");
   };
 
+  const tastePrefDisplay = userData?.taste_pref?.trim();
+  const allergyInfoDisplay = userData?.allergy_info?.trim();
+
 
 
   return (
@@ -84,16 +200,19 @@ const User = () => {
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
 
         {/* User information area */}
-        <View style={styles.profileSection}>
-          <View style={styles.avatarContainer}>
-            <Image
-              source={{ uri: '' }}
-              style={styles.avatar}
-            />
+        <View style={styles.profileCard}>
+
+          {/* User avatar*/}
+          <View style={[styles.avatarContainer, { alignItems: 'center', paddingTop: 10, }]}>
+            <Ionicons name="person-outline" size={66} color="#39f" />
           </View>
-          <Text style={styles.username}>{userData?.username || "Loading..."}</Text>
-          <Text style={styles.userDetail}>Email: {userData?.email || ""}</Text>
-          <Text style={styles.userDetail}>Mobile: {userData?.phone_no || ""}</Text>
+
+          {/* User details */}
+          <View style={styles.detailContainer}>
+            <Text style={styles.username}>{userData?.username || "Loading..."}</Text>
+            <Text style={styles.userDetail}>Email: {userData?.email || ""}</Text>
+            <Text style={styles.userDetail}>Mobile: {userData?.phone_no || ""}</Text>
+          </View>
 
           {/* Top settings button */}
           <TouchableOpacity
@@ -105,25 +224,48 @@ const User = () => {
         </View>
 
         {/* Statistics information area */}
-        <View style={styles.statsContainer}>
-          <Text style={styles.statsTitle}>Food Tracking Statistics</Text>
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>Food Tracking Statistics</Text>
           <View style={styles.statsGrid}>
-            <StatCard title="Total Food"    value={statsData.totalItems}    icon="fast-food-outline" />
-            <StatCard title="Sharing Food"  value={statsData.sharingItems}  icon="people-outline" />
-            <StatCard title="Expiring Food" value={statsData.expiringItems} icon="timer-outline" />
-            <StatCard title="Expired Food"  value={statsData.expiredItems}  icon="warning-outline" />
+            <StatCard title="Total Food"    value={statsLoading ? "--" : stats.totalItems}    icon="fast-food-outline" />
+            <StatCard title="Sharing Food"  value={statsLoading ? "--" : stats.sharingItems}  icon="people-outline" />
+            <StatCard title="Expiring Soon" value={statsLoading ? "--" : stats.expiringItems} icon="timer-outline" />
+            <StatCard title="Expired Food"  value={statsLoading ? "--" : stats.expiredItems}  icon="warning-outline" />
+            {/* <StatCard title="Food Categories" value={statsLoading ? "--" : stats.categories} icon="apps-outline" /> */}
+            {/* Food Categories card removed because we need even number of cards */}
+          </View>
+        </View>
+
+        {/* Personal preference section */}
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>Personal Preferences</Text>
+          <View style={styles.infoCard}>
+            <View style={[styles.infoItem, styles.infoItemFirst]}>
+              <Text style={styles.infoLabel}>Taste Preference</Text>
+              <Text style={styles.infoValue}>
+                {tastePrefDisplay && tastePrefDisplay.length > 0 ? tastePrefDisplay : "Not Specified"}
+                </Text>
+            </View>
+            <View style={styles.infoItem}>
+              <Text style={styles.infoLabel}>Allergy Information</Text>
+              <Text style={styles.infoValue}>
+                {allergyInfoDisplay && allergyInfoDisplay.length > 0 ? allergyInfoDisplay : "Not Specified"}
+              </Text>
+            </View>
           </View>
         </View>
 
         {/* Option list area (Currently only Settings) */}
-        <View style={styles.settingsContainer}>
-          <TouchableOpacity style={styles.settingsButtom}
-            onPress={() => router.push("/(settings)/settings")}
-            accessibilityRole="button"
-          >
-            <Ionicons name="settings-outline" size={24} color="#333" />
-            <Text style={styles.settingsText}>Settings</Text>
-          </TouchableOpacity>
+        <View style={styles.sectionContainer}>
+          <View style={styles.settingsCard}>
+            <TouchableOpacity style={styles.settingsItem}
+              onPress={() => router.push("/(settings)/settings")}
+              accessibilityRole="button"
+            >
+              <Ionicons name="settings-outline" size={24} color="#333" />
+              <Text style={styles.settingsText}>Settings</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Add bottom padding for scrolling */}
@@ -138,13 +280,13 @@ const User = () => {
   );
 };
 
-export default User;
+export default Profile;
 
 // Style sheet
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#f1f2f3",
   },
   scrollView: {
     flex: 1,
@@ -154,37 +296,32 @@ const styles = StyleSheet.create({
   },
   settingsButton: {
     position: 'absolute',
-    top: 20,
-    right: 20,
+    top: 10,
+    right: 10,
     zIndex: 1,
     padding: 8,
   },
-  profileSection: {
+  profileCard: {
     backgroundColor: '#fff',
-    paddingTop: 20,
-    paddingBottom: 20,
-    marginTop: 20,
-    marginHorizontal: 20,
-    alignItems: 'center',
+    padding: 20,
+    margin: 20,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     borderRadius: 20,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
+    shadowColor: "#bbb",
+    shadowRadius: 5,
     elevation: 5,
   },
   avatarContainer: {
-    marginBottom: 15,
-  },
-  avatar: {
     width: 100,
     height: 100,
-    borderRadius: 50,
-    borderWidth: 3,
-    borderColor: '#2196F3',
+    marginRight: 12,
+    borderRadius: 100,
+    borderWidth: 2,
+    borderColor: '#39f',
+  },
+  detailContainer: {
+    alignItems: 'flex-start',
   },
   username: {
     fontSize: 24,
@@ -197,11 +334,11 @@ const styles = StyleSheet.create({
     color: '#666',
     marginBottom: 10,
   },
-  statsContainer: {
-    padding: 20,
+  sectionContainer: {
     marginTop: 20,
+    paddingHorizontal: 20,
   },
-  statsTitle: {
+  sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 15,
@@ -220,14 +357,9 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     marginBottom: 15,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2.22,
-    elevation: 3,
+    shadowColor: "#bbb",
+    shadowRadius: 5,
+    elevation: 5,
   },
   statValue: {
     fontSize: 24,
@@ -239,17 +371,44 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
   },
-  settingsContainer: {
+  infoCard: {
     backgroundColor: '#fff',
-    marginTop: 0,
-    marginHorizontal: 20,
     borderRadius: 20,
-    padding: 20,
+    paddingHorizontal: 20,
+    shadowColor: "#bbb",
+    shadowRadius: 5,
+    elevation: 5,
   },
-  settingsButtom: {
+  infoItem: {
+    paddingVertical: 12,
+    borderTopColor: '#eee',
+    borderTopWidth: 1,
+  },
+  infoItemFirst: {
+    borderTopWidth: 0,
+  },
+  infoLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 4,
+  },
+  infoValue: {
+    fontSize: 16,
+    color: '#333',
+  },
+  settingsCard: {
+    marginTop: 20,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    shadowColor: "#bbb",
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  settingsItem: {
+    paddingHorizontal: 20,
+    paddingVertical: 15,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
     width: '100%',
   },
   settingsText: {
