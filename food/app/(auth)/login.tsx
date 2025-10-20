@@ -50,15 +50,15 @@ const Login = (props: Props) => {
 
     } catch (e: any) {
       if (e.code === "auth/user-not-found") {
-        show("User does not exist", "danger");
+        show("ERR: User does not exist", "danger");
       } else if (e.code === "auth/wrong-password") {
-        show("Either email or password is wrong", "danger");
+        show("ERR: Either email or password is wrong", "danger");
       } else if (e.code === "auth/invalid-email") {
-        show("Invalid email", "danger");
+        show("ERR: Invalid email", "danger");
       } else if (e.code === "auth/invalid-credential") {
-        show("Invalid credentials", "danger");
+        show("ERR: Invalid credentials", "danger");
       } else {
-        show("Login error: " + e, "danger");
+        show("ERR: Login error: " + e, "danger");
       }
     }
   }
