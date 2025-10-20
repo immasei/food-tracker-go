@@ -53,6 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email,
         phone_no: phone,
         createdAt: serverTimestamp(),
+        pushEnabled: false
       });
 
       console.log("Registered!!!");

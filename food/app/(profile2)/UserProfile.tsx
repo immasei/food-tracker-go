@@ -18,6 +18,7 @@ import AddressPicker, { reverseGeocodeWithGoogle } from "./AddressPicker";
 import { savePickedAddress } from "./firebase";
 import { Switch } from "react-native"; 
 import { useToast } from "../../components/Toast";
+import { sendExpoPush, registerForPushAndSave } from "./PushNotification"
 
 // --- firebase ---
 const db = getFirestore(firebaseApp);
@@ -48,6 +49,7 @@ type UserData = {
   email?: string | null;
   phone_no?: string | null;
   location?: Location | null;
+  pushEnabled?: boolean; 
 };
 
 type PickedAddress = {
@@ -91,6 +93,10 @@ const User = () => {
   // pickerRef.current?.clear();  // clear text
   const pickerRef = useRef<AddressPickerRef | null>(null);
 
+  // ------- push notifications --------------
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [savingPush, setSavingPush] = useState(false);
+
 
   // --------- logout -----------
   async function doLogout() {
@@ -112,8 +118,10 @@ const User = () => {
 				username: userData.username ?? null,
 				email: userData.email ?? null,
 				phone_no: userData.phone_no ?? null,
-				location: loc
+				location: loc,
+        pushEnabled: Boolean(userData.pushEnabled),
 			});
+      setPushEnabled(Boolean(userData.pushEnabled));
 		}
   }
 
@@ -135,13 +143,13 @@ const User = () => {
       // num shared
       if (x.shared === true) shared += 1;
 
-      // expired and expiry (d<=2)
+      // expired and soon expiring (d<=3)
 			const ymd = x.expiryDate ?? null;
 			if (isExpired(ymd)) {
 				expired += 1;
 			} else {
 				const dl = daysLeft(ymd);
-				if (Number.isFinite(dl) && dl <= 2) expiring += 1;
+				if (Number.isFinite(dl) && dl <= 3) expiring += 1;
 			}
 		});
 
@@ -163,6 +171,38 @@ const User = () => {
 			setRefreshing(false);
 		}
 	}, [fetchUser, fetchStats]);
+
+  const onTogglePush = async (val: boolean) => {
+    if (!userData) return;
+    setSavingPush(true);
+    try {
+      if (val) {
+        const token = await registerForPushAndSave(userData.id);
+        setPushEnabled(true);
+
+        // compute N and send instant push
+        await fetchStats();
+        const title = "Food expiring soon";
+        const body = stats.expiringItems === 0 ? "No items expiring in <=3 days" :
+                     stats.expiringItems === 1 ? "You have 1 item expiring in <=3 days" :
+                                                `You have ${stats.expiringItems} items expiring in ≤3 days`;
+
+        await sendExpoPush(token, title, body, { type: "expiring-food-summary", count: stats.expiredItems });
+
+        show("Push enabled", "success");
+      } else {
+        await updateDoc(doc(db, "users", userData.id), { pushEnabled: false });
+        setPushEnabled(false);
+        show("Push disabled", "warning");
+      }
+    } catch (e: any) {
+      console.error(e);
+      show(`Push error: ${e?.message ?? e}`, "danger");
+    } finally {
+      setSavingPush(false);
+    }
+  };
+
 
   // initial load
   useEffect(() => {
@@ -380,9 +420,9 @@ const User = () => {
               <Text style={{ fontSize: 16, color: "#333", fontWeight: "600" }}>Enable notifications</Text>
             </View>
             <Switch
-              // value={pushEnabled}
-              // onValueChange={onTogglePush}
-              // disabled={savingPush || !userData}
+              value={pushEnabled}
+              onValueChange={onTogglePush}
+              disabled={savingPush || !userData}
             />
           </View>
           <Text style={{ color: "#666", marginTop: 6 }}>

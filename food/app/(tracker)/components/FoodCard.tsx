@@ -29,7 +29,7 @@ const statusStyle = (iso: string | null | undefined) => {
     return [styles.badge, styles.badgeExpired];
     
   const d = daysLeft(iso);
-  if (Number.isFinite(d) && d <= 2) 
+  if (Number.isFinite(d) && d <= 3) 
     return [styles.badge, styles.badgeSoon];
     
   return [styles.badge, styles.badgeOk];
