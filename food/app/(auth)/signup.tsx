@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useContext } from "react";
 import {
   StyleSheet,
   Text,
@@ -6,11 +6,13 @@ import {
   View,
   Pressable,
   FlatList,
-  GestureResponderEvent,
+  GestureResponderEvent
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { useToast } from "../../components/Toast";
+import { AuthContext } from "../../contexts/AuthContext";
 
+// import { Ionicons } from "@expo/vector-icons";
 import firebaseApp from "../../config/firebaseConfig";
 import { createUserWithEmailAndPassword, getAuth } from "firebase/auth";
 import { getFirestore, collection, getDocs, addDoc, setDoc, doc } from "firebase/firestore";
@@ -22,6 +24,7 @@ const auth = getAuth(firebaseApp);
 type Props = {};
 
 const SignUp = (props: Props) => {
+  const { show, Toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
@@ -34,17 +37,19 @@ const SignUp = (props: Props) => {
   const [isButtonPressed, setIsButtonPressed] = useState(false);
 
   const router = useRouter();
+  const context = useContext(AuthContext);
 
   async function signUp() {
     // check if all fields are filled
     if (email === "" || password === "" || username === "" || phone === "") {
+      show("Please fill all the fields.", "warning");
       return "Please fill all the fields";
     }
 
     try {
       // create a new user
       // createUserWithEmailAndPassword automatically checks for errors like email not existing so we don't need to check for them manually
-      const newAcc = await createUserWithEmailAndPassword(auth, email, password);
+      const newAcc = await context.signup(email, password);
       const newUser = newAcc.user;
 
       const newDoc = await setDoc(doc(db, "users", newUser.uid), {
@@ -56,9 +61,15 @@ const SignUp = (props: Props) => {
       });
 
       // redirect to home page after successfully signing up
-      router.push("/FoodList");
-    } catch (e) {
-      console.error("Signing up error: ", e);
+      router.push("/tracker");
+    } catch (e: any) {
+      if (e.code === "auth/invalid-email") {
+        show("Invalid email", "danger");
+      } else if (e.code === "auth/weak-password") {
+        show("Weak password: should be at least 6 characters", "danger");
+      } else {
+        show("Sign up error: " + e, "danger");
+      }
     }
     
   }
@@ -149,6 +160,7 @@ const SignUp = (props: Props) => {
           <Text style={styles.signinLink}> Sign In</Text>
         </Pressable>
       </View>
+      <Toast/>
     </View>
   );
 };

@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { View, Text, StyleSheet, Pressable, FlatList, Button, Image, ActivityIndicator, Platform } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
-import { cloudOCR, OCRResult } from "./ocr";
-import { deriveFromOCR } from "./parser";
+import { cloudOCR, OCRResult } from "./utils/ocr";
+import { deriveFromOCR } from "./utils/parser";
 import { upsertItem, USER_ID } from "../(tracker)/utils/firebase";
 import { useToast } from "../../components/Toast";
 import { palette, shadow, styles } from "./styles";

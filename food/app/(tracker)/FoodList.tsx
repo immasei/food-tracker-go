@@ -12,7 +12,7 @@ import { useFoodItems } from "./utils/hooks";
 const FoodListTab: React.FC = () => {
   const { show, Toast } = useToast();
   const [search, setSearch] = useState("");
- const { filteredSorted } = useFoodItems(search);
+  const { filteredSorted } = useFoodItems(search);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Food | null>(null);

@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
-import { StyleSheet, Text, View, Image, TouchableOpacity, ScrollView } from "react-native";
+import React, { useState, useEffect, useContext } from "react";
+import { StyleSheet, Text, View, Image, TouchableOpacity, ScrollView, Pressable} from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import firebaseApp from "../../config/firebaseConfig";
 import { getFirestore, collection, getDocs } from "firebase/firestore";
+import { AuthContext } from "../../contexts/AuthContext";
 
 // Initialize Firebase Database
 const db = getFirestore(firebaseApp);
@@ -27,8 +28,13 @@ const statsData = {
 // User React Component
 const User = () => {
   const router = useRouter();
+  const context = useContext(AuthContext);
   const [userData, setUserData] = useState<UserData | null>(null); // Variable to store user data
 
+  async function logout() {
+    await context.logout();
+    router.replace("/login");
+  }
   // Fetch user data from Firebase
   async function fetchUser() {
     try {
@@ -108,6 +114,10 @@ const User = () => {
 
         {/* Add bottom padding for scrolling */}
         <View style={styles.bottomPadding} />
+
+        <Pressable onPress={logout} style={styles.btnDanger}>
+          <Text style={styles.btnText}>Log Out</Text>
+        </Pressable>
       </ScrollView>
     </View>
   );
@@ -117,6 +127,16 @@ export default User;
 
 // Style sheet
 const styles = StyleSheet.create({
+  btnDanger: {
+    backgroundColor: "#EF4444",
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  btnText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 16,
+  },
   container: {
     flex: 1,
     backgroundColor: "#f5f5f5",
