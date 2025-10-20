@@ -40,9 +40,11 @@ const EMPTY_STATS: FoodStats = {
 // Number of days to define expiring soon food. Can be added to settings later.
 const EXPIRING_WINDOW_DAYS = 3;
 
+
+
 // Profile React Component
-const Profile = () => {
-  const router = useRouter();  // Expo router for navigation
+export default function Profile() {
+  const router = useRouter();  // Expo router for url jumping
   const { user, logout, authChecked } = useContext(AuthContext);     // Use AuthContext to get user info and logout method
   const [userData, setUserData] = useState<UserData | null>(null);   // Variable to store user data
   const [stats, setStats] = useState<FoodStats>({ ...EMPTY_STATS }); // Variable to store food statistics
@@ -216,7 +218,7 @@ const Profile = () => {
 
           {/* Top settings button */}
           <TouchableOpacity
-            style={styles.settingsButton}
+            style={styles.settingsTopButton}
             onPress={() => router.push("/(settings)/settings")}
           >
             <Ionicons name="settings-outline" size={24} color="#333" />
@@ -257,7 +259,8 @@ const Profile = () => {
 
         {/* Option list area (Currently only Settings) */}
         <View style={styles.sectionContainer}>
-          <View style={styles.settingsCard}>
+          {/** Settings Button **/}
+          <View style={styles.settingsButton}>
             <TouchableOpacity style={styles.settingsItem}
               onPress={() => router.push("/(settings)/settings")}
               accessibilityRole="button"
@@ -266,21 +269,21 @@ const Profile = () => {
               <Text style={styles.settingsText}>Settings</Text>
             </TouchableOpacity>
           </View>
+
+          {/* Log out button */}
+          <View style={styles.logoutButton}>
+            <TouchableOpacity onPress={handleLogout}>
+              <Text style={styles.logoutText}>Log Out</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-
-        {/* Add bottom padding for scrolling */}
-        <View style={styles.bottomPadding} />
-
-        {/* Log out button */}
-        <Pressable onPress={handleLogout} style={styles.logoutButton}>
-          <Text style={styles.logoutButtonText}>Log Out</Text>
-        </Pressable>
+        
       </ScrollView>
     </View>
   );
 };
 
-export default Profile;
+
 
 // Style sheet
 const styles = StyleSheet.create({
@@ -291,10 +294,7 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  bottomPadding: {
-    height: 30,
-  },
-  settingsButton: {
+  settingsTopButton: {
     position: 'absolute',
     top: 10,
     right: 10,
@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
   },
-  settingsCard: {
+  settingsButton: {
     marginTop: 20,
     backgroundColor: '#fff',
     borderRadius: 20,
@@ -416,12 +416,17 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   logoutButton: {
-    backgroundColor: "#e55",
-    paddingVertical: 16,
+    marginVertical: 40,
+    borderRadius: 20,
+    paddingVertical: 15,
     alignItems: "center",
+    backgroundColor: "#fdd",
+    shadowColor: "#fdd",
+    shadowRadius: 5,
+    elevation: 5,
   },
-  logoutButtonText: {
-    color: "#fff",
+  logoutText: {
+    color: "#f00",
     fontWeight: "600",
     fontSize: 16,
   },
