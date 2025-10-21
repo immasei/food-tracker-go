@@ -19,6 +19,7 @@ import { savePickedAddress } from "./firebase";
 import { Switch } from "react-native"; 
 import { useToast } from "../../components/Toast";
 import { sendExpoPush, registerForPushAndSave } from "./PushNotification"
+import MapScreen from "./Map";
 
 // --- firebase ---
 const db = getFirestore(firebaseApp);
@@ -365,6 +366,25 @@ const User = () => {
             </TouchableOpacity>
           </View>
 
+          <View>
+            {/* display map */}
+            <TouchableOpacity
+              style={[styles.saveBtn]}
+              onPress={() => {
+                router.push({
+                  pathname: "/Map",
+                  params: {
+                    lat: userData?.location?.lat,
+                    lng: userData?.location?.lng,
+                    formatted: userData?.location?.formatted,
+                  },
+                });
+              }}
+              disabled={!userData?.location}
+            >
+              <Text>View on map</Text>
+            </TouchableOpacity>
+          </View>
 
           {userData?.location && (
             <View style={{ marginTop: 12 }}>
