@@ -3,7 +3,7 @@ import { View, StyleSheet, PermissionsAndroid, Platform,TouchableOpacity, Text }
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import * as Location from "expo-location";
 import AddressPicker, { reverseGeocodeWithGoogle, AddressPickerRef } from "./AddressPicker";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 
 export default function MapScreen() {
   const [region, setRegion] = useState<any>(null);
@@ -12,36 +12,57 @@ export default function MapScreen() {
 
   const router = useRouter();
 
-  // get current location
+  // data sent from the UserProfile through the router
+  const { lat, lng, formatted } = useLocalSearchParams();
+
+  // add marker to the saved/current location
   useEffect(() => {
-    (async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        console.warn("Permission to access location was denied");
-        return;
-      }
+    if (!lat || !lng) {
+      return;
+    }
 
-      const loc = await Location.getCurrentPositionAsync({});
-      setRegion({
-        latitude: loc.coords.latitude,
-        longitude: loc.coords.longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      });
+    const userLat = Number(lat);
+    const userLong = Number(lng);
 
-      // add a marker for current user location
-      setMarkers([
-        {
-          id: "me",
-          title: "You are here",
-          coordinate: {
-            latitude: loc.coords.latitude,
-            longitude: loc.coords.longitude,
-          },
+    // set the map region centered on the saved address
+    setRegion({
+      latitude: userLat,
+      longitude: userLong,
+      latitudeDelta: 0.01,
+      longitudeDelta: 0.01,
+    });
+
+    // add marker for the saved/current location
+    setMarkers([
+      {
+        id: "saved",
+        title: formatted ?? "Saved address",
+        coordinate: {
+          latitude: userLat,
+          longitude: userLong,
         },
-      ]);
-    })();
+      },
+    ]);
   }, []);
+
+  // user picking a place
+  const handlePicked = (picked: any) => {
+    setMarkers((prev) => [
+      ...prev,
+      {
+        id: picked.placeId,
+        title: picked.formatted,
+        coordinate: { latitude: picked.lat, longitude: picked.lng },
+      },
+    ]);
+
+    setRegion({
+      latitude: picked.lat,
+      longitude: picked.lng,
+      latitudeDelta: 0.01,
+      longitudeDelta: 0.01,
+    });
+  };
 
   if (!region) return null;
 
@@ -66,6 +87,11 @@ export default function MapScreen() {
       <TouchableOpacity style={styles.backbtn} onPress={() => router.push("/UserProfile")}>
         <Text style={styles.backbtnText}>Back</Text>
       </TouchableOpacity>
+
+      {/* pick address while using the map */}
+      {/* <View style={styles.searchBox}>
+        <AddressPicker ref={pickerRef} onPicked={handlePicked} />
+      </View> */}
     </View>
   );
 }
@@ -86,11 +112,11 @@ const styles = StyleSheet.create({
   backbtn: {
     position: "absolute",
     top: 50,
-    left: 20,
+    left: 15,
     backgroundColor: "#2563EB",
     paddingVertical: 6,
     paddingHorizontal: 12,
-    borderRadius: 8
+    borderRadius: 12
   },
   backbtnText: {
     color: "#fff",

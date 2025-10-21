@@ -369,7 +369,7 @@ const User = () => {
           <View>
             {/* display map */}
             <TouchableOpacity
-              style={[styles.saveBtn]}
+              style={[styles.mapBtn]}
               onPress={() => {
                 router.push({
                   pathname: "/Map",
@@ -382,7 +382,7 @@ const User = () => {
               }}
               disabled={!userData?.location}
             >
-              <Text>View on map</Text>
+              <Text style={styles.mapBtnText}>Start finding on map</Text>
             </TouchableOpacity>
           </View>
 
@@ -558,4 +558,16 @@ const styles = StyleSheet.create({
   btnPrimary: { backgroundColor: "#2563EB" },
   btnSuccess: { backgroundColor: "#059669" },
   saveBtnText: { color: "#fff", fontWeight: "700" },
+  mapBtn: {
+    flex: 1,
+    backgroundColor: "#666666",
+    paddingVertical: 12,
+    alignItems: "center",
+    borderRadius: 12,
+    marginTop: 7
+  },
+  mapBtnText: {
+    color: "#fff",
+    fontWeight: "700",
+  },
 });
