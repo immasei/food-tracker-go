@@ -10,7 +10,8 @@ import AuthOnly from "../../contexts/AuthOnly";
 
 export default function MainLayout() {
   return (
-    <AuthOnly>{/* Require the pages to login */}
+    <AuthOnly>
+      {/* AuthOnly: Require the pages to login */}
       <Tabs
         screenOptions={{
           headerShown: true,
