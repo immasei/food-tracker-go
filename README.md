@@ -2,7 +2,7 @@
 
 **COMP4216 / COMP5216 Group Project**
 
-[**User Guide**](#userguide/index)
+[**User Guide**](userguide/index.md)
 
 ## Introduction
 
@@ -38,7 +38,7 @@ npm install @google/genai
 
 All npm modules should be installed in project's `food` directory. 
 
-We use Google Firebase cloud service. You can use ours, or configure yours. We provide configure guide in the later part.
+We use Google Firebase cloud service. You can use ours, or configure yours. We provide configure guide in the later part [here](#google-firebase-service).
 
 After congiguration, you can start by:
 

@@ -3,11 +3,11 @@
 ## Table of Contents
 
 - **User Guide Home Page**
-- [Registration and Login](#account)
-- [Food List](#foodlist)
-- [Scanner](#scanner)
-- [AI Recipe](#recipe)
-- [Food Share](#foodshare)
+- [Registration and Login](account.md)
+- [Food List](foodlist.md)
+- [Scanner](scanner.md)
+- [AI Recipe](recipe.md)
+- [Food Share](foodshare.md)
 
 ## Introduction
 
@@ -21,7 +21,7 @@ Our main purpose is to help you consume food before it expires to avoid food was
 
 ## Core Functions
 
-Here are brief introductions to the core functions of our app. Please click the links in Table of Contents to see the detailed step-to-step user guide for each funcitons.
+Here are brief introductions to the core functions of our app. Please click the links in [Table of Contents](#table-of-contents) to see the detailed step-to-step user guide for each funcitons.
 
 ### Food List
 

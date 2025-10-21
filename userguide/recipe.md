@@ -2,12 +2,12 @@
 
 ## Table of Contents
 
-- [User Guide Home Page](#index)
-- [Registration and Login](#account)
-- [Food List](#foodlist)
-- [Scanner](#scanner)
+- [User Guide Home Page](index.md)
+- [Registration and Login](account.md)
+- [Food List](foodlist.md)
+- [Scanner](scanner.md)
 - **AI Recipe**
-- [Food Share](#foodshare)
+- [Food Share](foodshare.md)
 
 ## Feature Description
 
