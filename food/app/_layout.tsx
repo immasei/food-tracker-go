@@ -36,7 +36,7 @@ export default function RootLayout() {
         {/* Use Stack navigation globally */}
         <Stack
           screenOptions={{
-            headerShown: true,
+            headerShown: false,
             headerTitleAlign: "center", // Header title align to center
             headerStyle: { },
             headerTitleStyle: { fontSize: 18, fontWeight: "bold" },
@@ -67,6 +67,15 @@ export default function RootLayout() {
             options={{
               title: "Food Tracker Go",
               headerShown: false, // Hide the top title bar of the Stack
+            }}
+          />
+
+          {/* Map page */}
+          <Stack.Screen
+            name="(profile2)/Map"
+            options={{
+              title: "Food Sharing Map",
+              headerShown: false,
             }}
           />
 

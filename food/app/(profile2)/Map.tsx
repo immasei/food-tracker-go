@@ -84,7 +84,7 @@ export default function MapScreen() {
         ))}
       </MapView>
 
-      <TouchableOpacity style={styles.backbtn} onPress={() => router.push("/UserProfile")}>
+      <TouchableOpacity style={styles.backbtn} onPress={() => router.back()}>
         <Text style={styles.backbtnText}>Back</Text>
       </TouchableOpacity>
 
