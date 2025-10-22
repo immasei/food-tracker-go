@@ -25,8 +25,11 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();  // Detect light/dark mode
 
   return (
-    <AuthProvider> {/* Provide auth context globally */}
-      <SafeAreaProvider> {/* Safe area context for avoiding notches and edges */}
+    <AuthProvider> 
+      {/* AuthProvider: Provide auth context globally */} 
+      
+      {/* SafeAreaProvider: Safe area context for avoiding notches and edges */} 
+      <SafeAreaProvider>
         {/* Status bar color auto switch (light/dark mode) */}
         <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
 
