@@ -42,7 +42,7 @@ export default function MainLayout() {
           name="scanner"
           options={{
             title: "Scanner",
-            headerTitle: "Scanner",
+            headerTitle: "Add food by Scanner",
             tabBarIcon: () => <Ionicons size={24} name="scan-outline" />,
           }}
         />
@@ -57,7 +57,17 @@ export default function MainLayout() {
           }}
         />
 
-        {/* Tab 4: User Profile */}
+        {/* Tab 4: nearby food discovery */}
+        <Tabs.Screen
+          name="nearby"
+          options={{
+            title: "Nearby",
+            headerTitle: "Discover Nearby Food",
+            tabBarIcon: () => <Ionicons size={24} name="location-outline" />,
+          }}
+        />
+
+        {/* Tab 5: User Profile */}
         <Tabs.Screen
           name="profile"
           options={{

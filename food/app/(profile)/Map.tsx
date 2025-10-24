@@ -1,4 +1,4 @@
-// (profile2)/Map.tsx
+// (profile)/Map.tsx
 import React, { useEffect, useState, useRef } from "react";
 import { View, StyleSheet, TouchableOpacity, Text } from "react-native";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";

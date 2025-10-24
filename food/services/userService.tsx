@@ -3,7 +3,6 @@ import { db } from '@/config/firebaseFirestore';
 import { COLL } from "@/config/firebaseCollection";
 import {
   getDoc,
-  setDoc,
   updateDoc,
   doc,
   collection,
@@ -11,8 +10,10 @@ import {
   query,
   where,
 } from "firebase/firestore";
+import { LatLng } from "react-native-maps";
 import { User, ULocation, UStats } from "@/types/user";
 import { daysLeft, isExpired } from '@/utils/dates';
+import { kmToLatDelta, kmToLngDelta } from '@/utils/distances';
 
 // --- doc id is user id
 
@@ -74,4 +75,37 @@ export async function fetchStats(USER_ID: string) {
 export async function updateUser(docId: string, user: {}) {
   const ref = doc(db, COLL.USERS, docId);
   await updateDoc(ref, user);
+}
+
+export async function fetchNearbyUsers(center: LatLng, radiusKm: number, currentUserId: string) {
+  const latDelta = kmToLatDelta(radiusKm);
+  const minLat = center.latitude - latDelta;
+  const maxLat = center.latitude + latDelta;
+
+  // this query will exclude users without a location field.
+  const qUsers = query(
+    collection(db, "users"),
+    where("location.lat", ">=", minLat),
+    where("location.lat", "<=", maxLat)
+  );
+
+  const snap = await getDocs(qUsers);
+  const lngDelta = kmToLngDelta(radiusKm, center.latitude);
+  const minLng = center.longitude - lngDelta;
+  const maxLng = center.longitude + lngDelta;
+
+  const out: User[] = [];
+  snap.forEach((d) => {
+    const x = d.data() as any;
+    const loc = x.location ?? null;
+    if (!loc || typeof loc.lat !== "number" || typeof loc.lng !== "number") return;
+    if (loc.lng < minLng || loc.lng > maxLng) return;
+    out.push({ 
+      id: d.id, 
+      username: x.username ?? null, 
+      phone_no: x.phone_no ?? null, 
+      location: loc as ULocation | null, 
+    });
+  });
+  return out.filter(u => u.id !== currentUserId);
 }
