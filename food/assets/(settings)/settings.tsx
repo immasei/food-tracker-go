@@ -1,0 +1,244 @@
+import React, { useState, useEffect, useContext } from 'react';
+import { View, Text, StyleSheet, Switch, ScrollView, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from "expo-router";
+import { AuthContext } from "../../contexts/AuthContext";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+//import DateTimePicker from '@react-native-community/datetimepicker';
+//import { Slider } from '@rneui/themed';
+
+// Interface for settings data
+interface SettingsState {
+  enableNotifications: boolean;
+  notifyTime: Date;
+  expirationThreshold: number;
+  enableSound: boolean;
+  showExpiringFirst: boolean;
+}
+
+
+
+// Settings React Component
+export default function Settings() {
+  const router = useRouter();  // Expo router for url jumping
+  const { logout } = useContext(AuthContext);     // Use AuthContext to get logout method
+
+  // Variable to store settings data
+  const [settings, setSettings] = useState<SettingsState>({
+    enableNotifications: true,
+    notifyTime: new Date(),
+    expirationThreshold: 3,
+    enableSound: true,
+    showExpiringFirst: true,
+  });
+
+  // Used for time picker (implement later)
+  const [showTimePicker, setShowTimePicker] = useState(false);
+
+  // Auto start
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  // Load settings data from async storage
+  const loadSettings = async () => {
+    try {
+      const savedSettings = await AsyncStorage.getItem('appSettings');
+      if (savedSettings) {
+        const parsedSettings = JSON.parse(savedSettings);
+        setSettings({
+          ...parsedSettings,
+          notifyTime: new Date(parsedSettings.dailyReminderTime),
+        });
+      }
+    } catch (error) {
+      console.error('Error loading settings:', error);
+    }
+  };
+
+  // Save settings data to async storage
+  const saveSettings = async (newSettings: SettingsState) => {
+    try {
+      await AsyncStorage.setItem('appSettings', JSON.stringify(newSettings));
+    } catch (error) {
+      console.error('Error saving settings:', error);
+    }
+  };
+
+  // Function to change the settings data variable
+  const handleSettingChange = (key: keyof SettingsState, value: any) => {
+    const newSettings = { ...settings, [key]: value };
+    setSettings(newSettings);
+    saveSettings(newSettings);
+  };
+
+  // Used for time picker (implement later)
+  const handleTimeChange = (event: any, selectedDate?: Date) => {
+    setShowTimePicker(false);
+    if (selectedDate) {
+      handleSettingChange('notifyTime', selectedDate);
+    }
+  };
+
+  // Method to handle user logout
+  const handleLogout = async () => {
+    await logout();  // Call logout method from AuthContext
+    router.replace("/login");
+  };
+
+
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <ScrollView style={styles.scrollView}>
+        {/* Notification Settings */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Notification Settings</Text>
+          
+          <View style={styles.settingItem}>
+            <Text style={styles.settingLabel}>Enable notifications</Text>
+            <Switch
+              value={settings.enableNotifications}
+              onValueChange={(value) => handleSettingChange('enableNotifications', value)}
+            />
+          </View>
+
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={() => setShowTimePicker(true)}
+          >
+            <Text style={styles.settingLabel}>Time to notify</Text>
+            <Text style={styles.timeText}>
+              {settings.notifyTime.toLocaleTimeString().slice(0, 5)}
+            </Text>
+          </TouchableOpacity>
+
+          {/*showTimePicker && (
+            <DateTimePicker
+              value={settings.notifyTime}
+              mode="time"
+              is24Hour={true}
+              display="default"
+              onChange={handleTimeChange}
+            />
+          )*/}
+
+          <View style={styles.settingItem}>
+            <Text style={styles.settingLabel}>Enable sound</Text>
+            <Switch
+              value={settings.enableSound}
+              onValueChange={(value) => handleSettingChange('enableSound', value)}
+            />
+          </View>
+        </View>
+        
+        {/* Expiration Reminder Settings */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Expiration Reminder Settings</Text>
+          
+          <View style={styles.settingItem}>
+            <Text style={styles.settingLabel}>
+              Notify before expiration: {settings.expirationThreshold} days
+            </Text>
+          </View>
+          
+          {/**<Slider
+            value={settings.expirationThreshold}
+            onValueChange={(value) => handleSettingChange('expirationThreshold', value)}
+            minimumValue={1}
+            maximumValue={7}
+            step={1}
+            thumbStyle={styles.sliderThumb}
+            trackStyle={styles.sliderTrack}
+          />**/}
+
+          <View style={styles.settingItem}>
+            <Text style={styles.settingLabel}>Show expiring items first</Text>
+            <Switch
+              value={settings.showExpiringFirst}
+              onValueChange={(value) => handleSettingChange('showExpiringFirst', value)}
+            />
+          </View>
+        </View>
+
+        {/* Log out button */}
+        <View style={styles.logoutButton}>
+          <TouchableOpacity onPress={handleLogout}>
+            <Text style={styles.logoutText}>Log Out</Text>
+          </TouchableOpacity>
+        </View>
+
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+// Style sheets
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f1f2f3',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  section: {
+    backgroundColor: 'white',
+    marginVertical: 10,
+    marginHorizontal: 16,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    borderWidth: 0,
+    borderColor: '#eee',
+    borderRadius: 20,
+    shadowColor: "#bbb",
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 16,
+    color: '#333',
+  },
+  settingItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+  },
+  settingLabel: {
+    fontSize: 16,
+    color: '#333',
+  },
+  timeText: {
+    fontSize: 16,
+    color: '#666',
+  },
+  sliderThumb: {
+    backgroundColor: '#2196F3',
+    width: 24,
+    height: 24,
+  },
+  sliderTrack: {
+    height: 4,
+  },
+  logoutButton: {
+    marginVertical: 40,
+    marginHorizontal: 20,
+    borderRadius: 20,
+    paddingVertical: 15,
+    alignItems: "center",
+    backgroundColor: "#fdd",
+    shadowColor: "#fdd",
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  logoutText: {
+    color: "#f00",
+    fontWeight: "600",
+    fontSize: 16,
+  },
+});

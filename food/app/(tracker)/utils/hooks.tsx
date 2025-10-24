@@ -3,8 +3,9 @@ import { useEffect, useMemo, useState } from "react";
 import { collection, query as fsQuery, onSnapshot, orderBy, where } from "firebase/firestore";
 import { db } from '@/config/firebaseFirestore';
 import { COLL } from "@/config/firebaseCollection";
-import { daysLeft, isExpired, toISO, toYMD } from "@/utils/dates";
+import { toISO, toYMD } from "@/utils/dates";
 import { Food } from "@/types/food";
+import { sortFoods } from "@/services/foodService";
 
 export function fetchFoods(search: string, USER_ID:string) {
   const [items, setItems] = useState<Food[]>([]);
@@ -46,25 +47,7 @@ export function fetchFoods(search: string, USER_ID:string) {
       return n.includes(q) || c.includes(q);
     });
 
-    return arr.sort((a, b) => {
-      // 1) non-expired first > expired next > no-date is considered non-expired
-      const ax = isExpired(a.expiryDate) ? 0 : 1;
-      const bx = isExpired(b.expiryDate) ? 0 : 1;
-      if (ax !== bx) return bx - ax; // want non-expired (1) before expired (0)
-
-      // 2) soonest expiry first > no-date :fnfinity goes to bottom of non-expired bucket
-      const da = daysLeft(a.expiryDate);
-      const db = daysLeft(b.expiryDate);
-      if (da !== db) return da - db;
-
-      // 3) tie-breaker: name (empty strings go last)
-      const an = (a.name ?? "").trim();
-      const bn = (b.name ?? "").trim();
-      if (an && bn) return an.localeCompare(bn);
-      if (an && !bn) return -1;
-      if (!an && bn) return 1;
-      return 0;
-    });
+    return sortFoods(arr);
   }, [items, search]);
 
   return { items, filteredSorted, setItems };

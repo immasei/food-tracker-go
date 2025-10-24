@@ -1,10 +1,9 @@
-import { LogBox, View} from "react-native";
+import { View} from "react-native";
 import React, { forwardRef, useImperativeHandle, useRef } from "react";
 import { serverTimestamp } from "firebase/firestore";
 import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
 import { updateUser } from "@/services/userService";
 
-LogBox.ignoreLogs(["VirtualizedLists should never be nested"]);
 const GOOGLE_KEY = 'AIzaSyBKHxLnQVBtu7eNqFkkZMWm1VbXp2xGDKU';
 
 type Props = {
@@ -156,26 +155,52 @@ const AddressPicker = forwardRef<AddressPickerRef, Props>(({ onPicked, onOpenCha
           }
         }}
         styles={{
-          container: { flex: 0 },
+          container: {
+            flex: 0,
+            backgroundColor: "transparent",
+          },
+          textInputContainer: {
+            backgroundColor: "transparent",
+            padding: 0,
+            borderRadius: 12,
+          },
           textInput: {
             height: 46,
-            borderRadius: 12, 
+            borderRadius: 12,
             paddingHorizontal: 12,
             borderWidth: 1,
             borderColor: "#E5E7EB",
-            backgroundColor: "#fff",
+            backgroundColor: "rgba(255, 255, 255, 0.86)",
           },
           listView: {
             position: "absolute",
             top: 46,
             left: 0,
             right: 0,
-            backgroundColor: "#fff",
+            backgroundColor: "rgba(255, 255, 255, 0.98)",
             borderRadius: 12,
             zIndex: 10000,
-            elevation: 10  
+            elevation: 10,
+            // nice shadow:
+            shadowColor: "#000",
+            shadowOpacity: 0.12,
+            shadowRadius: 8,
+            shadowOffset: { width: 0, height: 4 },
           },
-          row: { paddingVertical: 12 },
+          row: {
+            paddingVertical: 12,
+            backgroundColor: "transparent",
+          },
+          separator: {
+            height: 1,
+            backgroundColor: "rgba(0,0,0,0.06)",
+          },
+          description: {
+            color: "#111827",
+          },
+          poweredContainer: {
+            backgroundColor: "transparent",
+          },
         }}
       />
     </View>
