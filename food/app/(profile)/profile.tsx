@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useContext } from "react";
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Pressable} from "react-native";
+import React, { useState, useEffect, useContext, useCallback } from "react";
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, RefreshControl, Pressable} from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import firebaseApp from "../../config/firebaseConfig";
@@ -17,6 +17,20 @@ type UserData = {
   phone_no: string;
   taste_pref: string;
   allergy_info: string;
+  location: Location;
+};
+
+// Data type definition for location
+type Location = {
+  placeId?: string | null;
+  formatted?: string | null;
+  suburb?: string | null;
+  state?: string | null;
+  postcode?: string | null;
+  country?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+  updatedAt?: any;
 };
 
 // Data type definition for food list statistics
@@ -48,9 +62,10 @@ export default function Profile() {
   const { user, logout, authChecked } = useContext(AuthContext);     // Use AuthContext to get user info and logout method
   const [userData, setUserData] = useState<UserData | null>(null);   // Variable to store user data
   const [stats, setStats] = useState<FoodStats>({ ...EMPTY_STATS }); // Variable to store food statistics
-  const [statsLoading, setStatsLoading] = useState(true);  // Variable to indicate if stats are loading
+  const [statsLoading, setStatsLoading] = useState(true);            // Variable to indicate if stats are loading
+  const [cancelledFetchStats, setCancelledFetchStats] = useState(false); // Cancellation flag for fetchStats
 
-  // Conditional auto-start 1:
+  // Conditional auto-start 1: Fetch user data
   useEffect(() => {
     // Check if user is logged in
     if (!authChecked) return; // If auth state is not checked, skip the code.
@@ -59,32 +74,37 @@ export default function Profile() {
       return;
     }
 
-    // Fetch user data from Firebase
-    (async () => {
-      try {
-        const snapshot1 = await getDoc(doc(db, "users", user.uid));
-        if (snapshot1.exists()) {
-          const data = snapshot1.data() as Partial<UserData>;
-          const tastePref = typeof data.taste_pref === "string" ? data.taste_pref : "";
-          const allergyInfo = typeof data.allergy_info === "string" ? data.allergy_info : "";
-          setUserData({
-            id: snapshot1.id,
-            username: data.username ?? "",
-            email: data.email ?? "",
-            phone_no: data.phone_no ?? "",
-            taste_pref: tastePref,
-            allergy_info: allergyInfo,
-          });
-        } else {
-          setUserData(null);
-        }
-      } catch (error) {
-        console.error("Error fetching user:", error);
-      }
-    })();
+    fetchUserData();
+
   }, [authChecked, user?.uid]); // Re-run when authCheck state or user ID changes
 
-  // Conditional auto-start 2:
+  // Method to fetch user data from Firebase
+  const fetchUserData = async () => {
+    try {
+      const snapshot1 = await getDoc(doc(db, "users", user.uid));
+      if (snapshot1.exists()) {
+        const data = snapshot1.data() as Partial<UserData>;
+        const tastePref = typeof data.taste_pref === "string" ? data.taste_pref : "";
+        const allergyInfo = typeof data.allergy_info === "string" ? data.allergy_info : "";
+
+        setUserData({
+          id: snapshot1.id,
+          username: data.username ?? "",
+          email: data.email ?? "",
+          phone_no: data.phone_no ?? "",
+          taste_pref: tastePref,
+          allergy_info: allergyInfo,
+          location: data.location ?? { formatted: "" },
+        });
+      } else {
+        setUserData(null);
+      }
+    } catch (error) {
+      console.error("Error fetching user:", error);
+    }
+  };
+
+  // Conditional auto-start 2: Fetch food statistics
   useEffect(() => {
     // Check to ensure user is logged in before querying database
     if (!authChecked) return;
@@ -94,88 +114,90 @@ export default function Profile() {
       return;
     }
 
-    let cancelled = false; // Cancellation flag for async operation
+    setCancelledFetchStats(false); // Reset cancellation flag
 
-    // Fetch food statistics from Firebase
-    (async () => {
-      setStatsLoading(true); // Set loading state to prevent flicker
-      try {
-        const foodQuery = query(collection(db, "food"), where("userId", "==", user.uid));
-        const snapshot2 = await getDocs(foodQuery);
-        const totals: FoodStats = { ...EMPTY_STATS };
-        const categories = new Set<string>();
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const soon = new Date(today);
-        soon.setDate(today.getDate() + EXPIRING_WINDOW_DAYS);
-
-        // Function to parse expiry date from various formats
-        const parseExpiryDate = (value: unknown): Date | null => {
-          if (typeof value === "string" && value.trim().length > 0) {
-            const dt = new Date(value);
-            return Number.isNaN(dt.getTime()) ? null : dt;
-          }
-          if (value && typeof value === "object" && typeof (value as any).toDate === "function") {
-            const dt = (value as any).toDate();
-            return dt instanceof Date && !Number.isNaN(dt.getTime()) ? dt : null;
-          }
-          return null;
-        };
-
-        // Loop through each food item to calculate statistics
-        snapshot2.forEach((docSnap) => {
-          const data = docSnap.data() ?? {};
-
-          // Count total items
-          totals.totalItems += 1;
-
-          // Count sharing items
-          if (data.shared === true) {
-            totals.sharingItems += 1;
-          }
-
-          // Collect unique categories
-          if (typeof data.category === "string") {
-            const normalizedCategory = data.category.trim().toLowerCase();
-            if (normalizedCategory.length > 0) {
-              categories.add(normalizedCategory);
-            }
-          }
-
-          // Check expiry status and count expiring & expired items
-          const expiry = parseExpiryDate((data as any).expiryDate);
-          if (expiry) {
-            if (expiry < today) {
-              totals.expiredItems += 1;
-            } else if (expiry <= soon) {
-              totals.expiringItems += 1;
-            }
-          }
-        });
-
-        totals.categories = categories.size;
-
-        // Save data
-        if (!cancelled) {
-          setStats(totals);
-        }
-      } catch (error) {
-        console.error("Error fetching food stats:", error);
-        if (!cancelled) {
-          setStats({ ...EMPTY_STATS });
-        }
-      } finally {
-        if (!cancelled) {
-          setStatsLoading(false); // Set back loading state
-        }
-      }
-    })();
+    fetchFoodStats();
 
     return () => {
-      cancelled = true; // Set cancellation flag on cleanup
+      setCancelledFetchStats(true); // Set cancellation flag on cleanup
     };
   }, [authChecked, user?.uid]);
+
+  // Method to fetch food statistics from Firebase
+  const fetchFoodStats = async () => {
+    setStatsLoading(true); // Set loading state to prevent flicker
+    try {
+      const foodQuery = query(collection(db, "food"), where("userId", "==", user.uid));
+      const snapshot2 = await getDocs(foodQuery);
+      const totals: FoodStats = { ...EMPTY_STATS };
+      const categories = new Set<string>();
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const soon = new Date(today);
+      soon.setDate(today.getDate() + EXPIRING_WINDOW_DAYS);
+
+      // Function to parse expiry date from various formats
+      const parseExpiryDate = (value: unknown): Date | null => {
+        if (typeof value === "string" && value.trim().length > 0) {
+          const dt = new Date(value);
+          return Number.isNaN(dt.getTime()) ? null : dt;
+        }
+        if (value && typeof value === "object" && typeof (value as any).toDate === "function") {
+          const dt = (value as any).toDate();
+          return dt instanceof Date && !Number.isNaN(dt.getTime()) ? dt : null;
+        }
+        return null;
+      };
+
+      // Loop through each food item to calculate statistics
+      snapshot2.forEach((docSnap) => {
+        const data = docSnap.data() ?? {};
+
+        // Count total items
+        totals.totalItems += 1;
+
+        // Count sharing items
+        if (data.shared === true) {
+          totals.sharingItems += 1;
+        }
+
+        // Collect unique categories
+        if (typeof data.category === "string") {
+          const normalizedCategory = data.category.trim().toLowerCase();
+          if (normalizedCategory.length > 0) {
+            categories.add(normalizedCategory);
+          }
+        }
+
+        // Check expiry status and count expiring & expired items
+        const expiry = parseExpiryDate((data as any).expiryDate);
+        if (expiry) {
+          if (expiry < today) {
+            totals.expiredItems += 1;
+          } else if (expiry <= soon) {
+            totals.expiringItems += 1;
+          }
+        }
+      });
+
+      totals.categories = categories.size;
+
+      // Save data
+      if (! cancelledFetchStats) {
+        setStats(totals);
+      }
+    } catch (error) {
+      console.error("Error fetching food stats:", error);
+      if (! cancelledFetchStats) {
+        setStats({ ...EMPTY_STATS });
+      }
+    } finally {
+      if (! cancelledFetchStats) {
+        setStatsLoading(false); // Set back loading state
+      }
+    }
+  };
 
   // Method to return one card in user statistics area
   const StatCard = ({ title, value, icon }: { title: string; value: number | string; icon: string }) => (
@@ -192,14 +214,31 @@ export default function Profile() {
     router.replace("/login");
   };
 
+  // Prepare personal preference display values
   const tastePrefDisplay = userData?.taste_pref?.trim();
   const allergyInfoDisplay = userData?.allergy_info?.trim();
+  const addressInfoDisplay = userData?.location.formatted?.trim();
+  
+  // Pull-to-refresh handler by Linh
+  const onRefresh = useCallback(async () => {
+    setStatsLoading(true);
+    try {
+      // Re-fetch both user data and food stats
+      await Promise.all([fetchUserData(), fetchFoodStats()]);
+    } finally {
+      setStatsLoading(false);
+    }
+  }, [fetchUserData, fetchFoodStats]);
 
 
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.scrollView} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={statsLoading} onRefresh={onRefresh} />}
+      >
 
         {/* User information area */}
         <View style={styles.profileCard}>
@@ -210,16 +249,16 @@ export default function Profile() {
           </View>
 
           {/* User details */}
-          <View style={styles.detailContainer}>
+          <Pressable style={styles.detailContainer} onPress={()=>{router.push("/settings/userinfo")}} >
             <Text style={styles.username}>{userData?.username || "Loading..."}</Text>
             <Text style={styles.userDetail}>Email: {userData?.email || ""}</Text>
             <Text style={styles.userDetail}>Mobile: {userData?.phone_no || ""}</Text>
-          </View>
+          </Pressable>
 
           {/* Top settings button */}
           <TouchableOpacity
             style={styles.settingsTopButton}
-            onPress={() => router.push("/(settings)/settings")}
+            onPress={() => router.push("/settings/settings")}
           >
             <Ionicons name="settings-outline" size={24} color="#333" />
           </TouchableOpacity>
@@ -229,11 +268,11 @@ export default function Profile() {
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>Food Tracking Statistics</Text>
           <View style={styles.statsGrid}>
-            <StatCard title="Total Food"    value={statsLoading ? "--" : stats.totalItems}    icon="fast-food-outline" />
-            <StatCard title="Sharing Food"  value={statsLoading ? "--" : stats.sharingItems}  icon="people-outline" />
-            <StatCard title="Expiring Soon" value={statsLoading ? "--" : stats.expiringItems} icon="timer-outline" />
-            <StatCard title="Expired Food"  value={statsLoading ? "--" : stats.expiredItems}  icon="warning-outline" />
-            {/* <StatCard title="Food Categories" value={statsLoading ? "--" : stats.categories} icon="apps-outline" /> */}
+            <StatCard title="Total Food"    value={stats.totalItems}    icon="fast-food-outline" />
+            <StatCard title="Sharing Food"  value={stats.sharingItems}  icon="people-outline" />
+            <StatCard title="Expiring Soon" value={stats.expiringItems} icon="timer-outline" />
+            <StatCard title="Expired Food"  value={stats.expiredItems}  icon="warning-outline" />
+            {/* <StatCard title="Food Categories" value={stats.categories} icon="apps-outline" /> */}
             {/* Food Categories card removed because we need even number of cards */}
           </View>
         </View>
@@ -242,40 +281,48 @@ export default function Profile() {
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>Personal Preferences</Text>
           <View style={styles.infoCard}>
-            <View style={[styles.infoItem, styles.infoItemFirst]}>
+            {/* Address */}
+            <Pressable style={({ pressed }) => [styles.infoItem, styles.infoItemFirst, pressed && styles.pressed]} 
+              onPress={()=>{router.push("/settings/location")}} 
+            >
+              <Text style={styles.infoLabel}>Address</Text>
+              <Text style={styles.infoValue}>
+                {addressInfoDisplay && addressInfoDisplay.length > 0 ? addressInfoDisplay : "Not Specified"}
+              </Text>
+            </Pressable>
+            {/* Taste Preference */}
+            <Pressable style={({ pressed }) => [styles.infoItem, pressed && styles.pressed]} 
+            onPress={()=>{router.push("/settings/userinfo")}} >
               <Text style={styles.infoLabel}>Taste Preference</Text>
               <Text style={styles.infoValue}>
                 {tastePrefDisplay && tastePrefDisplay.length > 0 ? tastePrefDisplay : "Not Specified"}
                 </Text>
-            </View>
-            <View style={styles.infoItem}>
+            </Pressable>
+            {/* Allergy Information */}
+            <Pressable style={({ pressed }) => [styles.infoItem, pressed && styles.pressed]} 
+            onPress={()=>{router.push("/settings/userinfo")}} >
               <Text style={styles.infoLabel}>Allergy Information</Text>
               <Text style={styles.infoValue}>
                 {allergyInfoDisplay && allergyInfoDisplay.length > 0 ? allergyInfoDisplay : "Not Specified"}
               </Text>
-            </View>
+            </Pressable>
           </View>
         </View>
 
-        {/* Option list area (Currently only Settings) */}
-        <View style={styles.sectionContainer}>
-          {/** Settings Button **/}
-          <View style={styles.settingsButton}>
-            <TouchableOpacity style={styles.settingsItem}
-              onPress={() => router.push("/(settings)/settings")}
-              accessibilityRole="button"
-            >
-              <Ionicons name="settings-outline" size={24} color="#333" />
-              <Text style={styles.settingsText}>Settings</Text>
-            </TouchableOpacity>
+        {/* Settings Button */}
+        <Pressable style={({ pressed }) => [styles.settingsButton, pressed && styles.pressed]} 
+        onPress={() => router.push("/settings/settings")} accessibilityRole="button" >
+          <View style={styles.settingsItem} >
+            <Ionicons name="settings-outline" size={24} color="#333" />
+            <Text style={styles.settingsText}>Settings</Text>
           </View>
+        </Pressable>
 
-          {/* Log out button */}
-          <View style={styles.logoutButton}>
-            <TouchableOpacity onPress={handleLogout}>
-              <Text style={styles.logoutText}>Log Out</Text>
-            </TouchableOpacity>
-          </View>
+        {/* Log out button */}
+        <View style={styles.logoutButton}>
+          <TouchableOpacity onPress={handleLogout}>
+            <Text style={styles.logoutText}>Log Out</Text>
+          </TouchableOpacity>
         </View>
         
       </ScrollView>
@@ -293,6 +340,9 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  pressed: {
+    backgroundColor: '#eee',
   },
   settingsTopButton: {
     position: 'absolute',
@@ -397,7 +447,8 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   settingsButton: {
-    marginTop: 20,
+    marginTop: 40,
+    marginHorizontal: 20,
     backgroundColor: '#fff',
     borderRadius: 20,
     shadowColor: "#bbb",
@@ -416,6 +467,7 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   logoutButton: {
+    marginHorizontal: 20,
     marginVertical: 40,
     borderRadius: 20,
     paddingVertical: 15,
