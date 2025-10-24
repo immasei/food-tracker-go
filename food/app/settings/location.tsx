@@ -3,17 +3,15 @@ import { View, Text, StyleSheet, Switch, TouchableOpacity, Alert, ActivityIndica
 import { useRouter } from "expo-router";
 
 import { AuthContext } from "../../contexts/AuthContext";
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import firebaseApp from "../../config/firebaseConfig";
-import { getFirestore, doc, getDoc, updateDoc, serverTimestamp, getDocs, collection, query, where } from "firebase/firestore";
+import { serverTimestamp } from "firebase/firestore";
 
 // Imports for location by Linh
 import * as Location from "expo-location";
 import AddressPicker, { reverseGeocodeWithGoogle, savePickedAddress } from "@/components/AddressPicker";
 import { useToast } from "../../components/Toast";
 import Loading from "@/components/Loading"
-import { User, UStats } from "@/types/user"
+import { User } from "@/types/user"
 import { fetchUser, fetchStats, updateUser } from "@/services/userService";
 
 
@@ -41,9 +39,8 @@ export default function Settings() {
   const { user, authChecked } = useContext(AuthContext);     // Use AuthContext to get user info and logout method
   const USER_ID = user?.uid ?? null;  // Current user ID used for check logged in status
   const [userData, setUserData] = useState<User | null>(null);   // Variable to store user data
-  const [stats, setStats] = useState<UStats>({ totalItems: 0, expiringItems: 0, expiredItems: 0, sharedItems: 0 });
   const [refreshing, setRefreshing] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
 
 
@@ -68,14 +65,10 @@ export default function Settings() {
     }
     setRefreshing(true);
     try {
-      // re-fetch both
-      const [userRes, statsRes] = await Promise.all([
-        fetchUser(USER_ID),
-        fetchStats(USER_ID),
-      ]);
+      // re-fetch user
+      const userRes = await fetchUser(USER_ID);
 
       setUserData(userRes);
-      setStats(statsRes);
     } catch (err) {
       show("ERR: loading user data", "danger");
       console.error("Error refreshing:", err);
@@ -95,7 +88,7 @@ export default function Settings() {
   // Method to get current location using GPS by Linh
   // GPS -> reverse geocode -> save (use lat/lng -> send to google place api to get full address)
   async function useCurrentLocation() {
-    if (!userData) return;
+    if (!userData || !USER_ID) return;
     setSavingLoc(true);
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -111,7 +104,7 @@ export default function Settings() {
       const result = await reverseGeocodeWithGoogle(lat, lng);
 
       if (result) {
-        await savePickedAddress(userData.id, {
+        await savePickedAddress(USER_ID, {
           placeId: result.placeId,
           formatted: result.formatted,
           lat,

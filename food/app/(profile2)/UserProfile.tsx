@@ -4,7 +4,7 @@ import {
   StyleSheet, Text, View, TouchableOpacity,
   Alert, Switch, ActivityIndicator, FlatList, Platform
 } from "react-native";
-import { Link, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { serverTimestamp } from "firebase/firestore";
@@ -405,14 +405,6 @@ const UserProfile = () => {
               <Text style={styles.btnText}>Log Out</Text>
             </TouchableOpacity>
 
-            {/* Links to the developing Profile and Setting pages */}
-            <Link href="/(profile)/profile" style={{ alignSelf: "center", marginBottom: 10, marginTop: 20 }}>
-              <Text style={{ color: "#2563EB", fontWeight: "600" }}>Old Profile Page</Text>
-            </Link>
-
-            <Link href="/settings/settings" style={{ alignSelf: "center", marginBottom: 20, marginTop: 10 }}>
-              <Text style={{ color: "#2563EB", fontWeight: "600" }}>Old Settings Page</Text>
-            </Link>
           </>
         }
         keyboardShouldPersistTaps="handled"

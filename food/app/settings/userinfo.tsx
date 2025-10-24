@@ -205,6 +205,9 @@ export default function UserInfoSettings() {
               inputProps={{ autoCapitalize: "words", maxLength: 32 }}
               firstItem
             />
+            {/* It seems that editing email requires additional process, 
+                so I'm considering disabling editing of email, 
+                but remain the display here. */}
             <EditCard
               title="Edit Email"
               subtitle="Login using this email."
@@ -221,6 +224,8 @@ export default function UserInfoSettings() {
                 textContentType: "emailAddress",
               }}
             />
+            {/* If we implement a change password page, I'll add the URL here. 
+                Otherwise, I'll comment this out in the finial submission. */}
             <EditCard
               title="Change Password"
               subtitle="Please remember your password."

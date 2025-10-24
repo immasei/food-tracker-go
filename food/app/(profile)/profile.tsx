@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext, useCallback } from "react";
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, RefreshControl, Pressable} from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, Link } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import firebaseApp from "../../config/firebaseConfig";
 import { getFirestore, doc, getDoc, collection, getDocs, query, where } from "firebase/firestore";
@@ -325,6 +325,11 @@ export default function Profile() {
           </TouchableOpacity>
         </View>
         
+        {/* Link to the Profile2 pages */}
+        <Link href="/(profile2)/UserProfile" style={{ alignSelf: "center", marginBottom: 20 }}>
+          <Text style={{ color: "#bbb", fontWeight: "600" }}>Click here to Profile2 Page</Text>
+        </Link>
+
       </ScrollView>
     </View>
   );
@@ -463,6 +468,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   settingsText: {
+    marginLeft: 10,
     fontSize: 18,
     color: '#333',
   },
