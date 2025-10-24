@@ -8,49 +8,15 @@ import { Ionicons } from '@expo/vector-icons';
 import firebaseApp from "../../config/firebaseConfig";
 import { getFirestore, doc, getDoc, updateDoc, serverTimestamp, getDocs, collection, query, where } from "firebase/firestore";
 
-// Imports for location and notifications by Linh
+// Imports for location by Linh
 import * as Location from "expo-location";
 import AddressPicker, { reverseGeocodeWithGoogle, savePickedAddress } from "@/components/AddressPicker";
 import { useToast } from "../../components/Toast";
-import { sendExpoPush, registerForPushAndSave } from "../(profile2)/utils/pushNotification"
+import Loading from "@/components/Loading"
+import { User, UStats } from "@/types/user"
+import { fetchUser, fetchStats, updateUser } from "@/services/userService";
 
 
-
-// Interface for settings data
-interface SettingsState {
-  notifyTime: Date;
-  expirationThreshold: number; // Expiring window in days
-  enableSound: boolean;
-  showExpiringFirst: boolean;
-}
-
-// Initialize Firebase Database
-const db = getFirestore(firebaseApp);
-
-// Data type definition for user data
-type UserData = {
-  id: string;
-  username: string;
-  email: string;
-  phone_no: string;
-  taste_pref: string;
-  allergy_info: string;
-  location: Location;
-  pushEnabled: boolean;
-};
-
-// Data type definition for location
-type Location = {
-  placeId?: string | null;
-  formatted?: string | null;
-  suburb?: string | null;
-  state?: string | null;
-  postcode?: string | null;
-  country?: string | null;
-  lat?: number | null;
-  lng?: number | null;
-  updatedAt?: any;
-};
 
 // Data type definition for picked address
 type PickedAddress = {
@@ -72,27 +38,16 @@ type AddressPickerRef = {
 // Settings React Component
 export default function Settings() {
   const router = useRouter();  // Expo router for url jumping
-  const { user, logout, authChecked } = useContext(AuthContext);     // Use AuthContext to get user info and logout method
+  const { user, authChecked } = useContext(AuthContext);     // Use AuthContext to get user info and logout method
   const USER_ID = user?.uid ?? null;  // Current user ID used for check logged in status
-  const [userData, setUserData] = useState<UserData | null>(null);   // Variable to store user data
+  const [userData, setUserData] = useState<User | null>(null);   // Variable to store user data
+  const [stats, setStats] = useState<UStats>({ totalItems: 0, expiringItems: 0, expiredItems: 0, sharedItems: 0 });
+  const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Used for notifications
-  const [expiringItems, setExpiringItems] = useState(0);
-  const [expiredItems, setExpiredItems] = useState(0);
 
 
-  // Variable to store settings data
-  const [settings, setSettings] = useState<SettingsState>({
-    notifyTime: new Date(),
-    expirationThreshold: 3,
-    enableSound: true,
-    showExpiringFirst: true,
-  });
-
-
-
-  // Location & push notification by Linh
+  // Location by Linh
   const { show, Toast } = useToast(); // Toast for in-app
   // savingLoc: When press save address/ use current location btn -> lock btns temporarily to avoid multiple triggers
   const [savingLoc, setSavingLoc] = useState(false);
@@ -101,139 +56,39 @@ export default function Settings() {
   // pickerOpen: When address picker focused , disable scrolling of current view to prevent override on scrolling of dropdown options
   const [pickerOpen, setPickerOpen] = useState(false);
   const pickerRef = useRef<AddressPickerRef | null>(null);  // address picker ref
-  // savingPush: Disable push toggle button when button is switching
-  const [savingPush, setSavingPush] = useState(false);
   
 
 
-  // Auto start 1：Load settings
-  useEffect(() => {
-    loadSettings();
-  }, []);
-
-  // Method to load settings data from async storage
-  const loadSettings = async () => {
-    try {
-      const savedSettings = await AsyncStorage.getItem('appSettings');
-      if (savedSettings) {
-        const parsedSettings = JSON.parse(savedSettings);
-        setSettings({
-          ...parsedSettings,
-          notifyTime: new Date(parsedSettings.dailyReminderTime),
-        });
-      }
-    } catch (error) {
-      console.error('Error loading settings:', error);
-    }
-  };
-
-  // Method to save settings data to async storage
-  const saveSettings = async (newSettings: SettingsState) => {
-    try {
-      await AsyncStorage.setItem('appSettings', JSON.stringify(newSettings));
-    } catch (error) {
-      console.error('Error saving settings:', error);
-    }
-  };
-
-  // Method to change the settings data variable
-  const handleSettingChange = (key: keyof SettingsState, value: any) => {
-    const newSettings = { ...settings, [key]: value };
-    setSettings(newSettings);
-    saveSettings(newSettings);
-  };
-
-  // Conditional auto-start 2: Fetch user data
-  useEffect(() => {
-    // Check if user is logged in
-    if (!authChecked) return; // If auth state is not checked, skip the code.
-    if (!user?.uid) {     // If no user is logged in
-      setUserData(null);  // Reset user data variable
+  // Method to fetch user data
+  // Used in pull-to-refresh handler by Linh
+  const onRefresh = useCallback(async () => {
+    if (!USER_ID) {
+      show("Please login first.", "danger");
       return;
     }
-
-    fetchUserData();
-
-  }, [authChecked, user?.uid]); // Re-run when authCheck state or user ID changes
-
-  // Method to fetch user data from Firebase
-  const fetchUserData = async () => {
+    setRefreshing(true);
     try {
-      const snapshot1 = await getDoc(doc(db, "users", user.uid));
-      if (snapshot1.exists()) {
-        const data = snapshot1.data() as Partial<UserData>;
-        const tastePref = typeof data.taste_pref === "string" ? data.taste_pref : "";
-        const allergyInfo = typeof data.allergy_info === "string" ? data.allergy_info : "";
-        const location = typeof data.location === "object" ? data.location : { formatted: "" };
+      // re-fetch both
+      const [userRes, statsRes] = await Promise.all([
+        fetchUser(USER_ID),
+        fetchStats(USER_ID),
+      ]);
 
-        setUserData({
-          id: snapshot1.id,
-          username: data.username ?? "",
-          email: data.email ?? "",
-          phone_no: data.phone_no ?? "",
-          taste_pref: tastePref,
-          allergy_info: allergyInfo,
-          location: location,
-          pushEnabled: data.pushEnabled ?? false,
-        });
-      } else {
-        setUserData(null);
-      }
-    } catch (error) {
-      console.error("Error fetching user:", error);
+      setUserData(userRes);
+      setStats(statsRes);
+    } catch (err) {
+      show("ERR: loading user data", "danger");
+      console.error("Error refreshing:", err);
+    } finally {
+      setRefreshing(false);
+      setLoading(false);
     }
-  };
+  }, [USER_ID]);
   
-  // Method to fetch food list from Firebase and calculate expiring/expired items
-  const fetchFoodList = async () => {
-    try {
-      const foodQuery = query(collection(db, "food"), where("userId", "==", user.uid));
-      const snapshot2 = await getDocs(foodQuery);
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const soon = new Date(today);
-      soon.setDate(today.getDate() + settings.expirationThreshold);
-
-      // Function to parse expiry date from various formats
-      const parseExpiryDate = (value: unknown): Date | null => {
-        if (typeof value === "string" && value.trim().length > 0) {
-          const dt = new Date(value);
-          return Number.isNaN(dt.getTime()) ? null : dt;
-        }
-        if (value && typeof value === "object" && typeof (value as any).toDate === "function") {
-          const dt = (value as any).toDate();
-          return dt instanceof Date && !Number.isNaN(dt.getTime()) ? dt : null;
-        }
-        return null;
-      };
-
-      // Loop through each food item to calculate expiry stats
-      snapshot2.forEach((docSnap) => {
-        const data = docSnap.data() ?? {};
-
-        // Check expiry status and count expiring & expired items
-        const expiry = parseExpiryDate((data as any).expiryDate);
-        if (expiry) {
-          if (expiry < today) {
-            setExpiredItems((prev) => prev + 1);
-          } else if (expiry <= soon) {
-            setExpiringItems((prev) => prev + 1);
-          }
-        }
-      });
-
-    } catch (error) {
-      console.error("Error fetching food stats:", error);
-    }
-  };
-
-  // Method to handle change of food list sorting toggle
-  const handleChangeFoodListSorting = (value: boolean) => {
-    if (!value) {
-      handleChangeFoodListSorting(true);  // Force enable
-    }
-  };
+  // Auto start
+  useEffect(() => {
+    onRefresh();
+  }, [onRefresh]);
 
 
 
@@ -269,7 +124,7 @@ export default function Settings() {
 
       } else {
         // fallback: save just coords
-        await updateDoc(doc(db, "users", userData.id), {
+        await updateUser(USER_ID, {
           location: {
             ...(userData.location ?? {}),
             lat, lng,
@@ -280,8 +135,8 @@ export default function Settings() {
         show("Lat/lon saved.", "warning")
       }
 
-      const refreshed = await getDoc(doc(db, "users", userData.id));
-      setUserData(u => (u ? { ...u, location: (refreshed.data() as any).location ?? null } : u));
+      const refreshed = await fetchUser(USER_ID);
+      setUserData(refreshed);
       // Alert.alert("Saved", "Current location saved.");
     } catch (e) {
       console.error(e);
@@ -306,9 +161,8 @@ export default function Settings() {
     setSavingLoc(true);
     try {
       await savePickedAddress(USER_ID, pending);
-      //const refreshed = 
-      await fetchUserData();
-      //setUserData(refreshed);
+      const refreshed = await fetchUser(USER_ID);
+      setUserData(refreshed);
       // Alert.alert("Saved", pending.formatted);
       show("Saved: " + pending.formatted, "success");
       setPending(null);                 // clear local selection after save
@@ -322,65 +176,13 @@ export default function Settings() {
     }
   };
 
-  // Method to handle toggle push notification button by Linh
-  const onTogglePush = async (val: boolean) => {
-    if (!userData) return;
-    setSavingPush(true);
-    if (val) {  // Toggle on
-      // Send one push notification now when toggled on
-      await sendPushNoti();
-    } else {  // Toggle off
-      // Save setting to DB
-      await updateDoc(doc(db, "users", userData.id), { pushEnabled: false });
-      fetchUserData();  // Manually update user data after push setting is saved
-      show("Push disabled", "warning");
-    }
-    setSavingPush(false);
-  };
-
-  // Method to send push notification by Linh
-  const sendPushNoti = async () => {
-    if (!userData) return;
-    try {
-      const token = await registerForPushAndSave(userData.id);
-      await fetchUserData();  // Fetch user data after registering for push
-      await fetchFoodList(); // Fetch food stats when used to send push
-
-      // Prepare notification content
-      const title = "Food expiring soon";
-      const expDays = settings.expirationThreshold;
-      let body = "";
-      if (expiringItems > 0) {
-        body = `No items expiring in <=${expDays} days`; 
-      } else if (expiringItems === 1) {
-        body = `You have 1 item expiring in <=${expDays} days`;
-      } else {
-        body = `You have ${expiringItems} items expiring in <=${expDays} days`;
-      }
-      
-      // Send push notification using Expo
-      await sendExpoPush(token, title, body, { type: "expiring-food-summary", count: expiringItems });
-
-      show("Push enabled", "success");
-      
-    } catch (e: any) {
-      console.error(e);
-      show(`Push error: ${e?.message ?? e}`, "danger");
-    } finally {
-      setSavingPush(false);
-    }
-  };
-
-  // Pull-to-refresh handler by Linh
-  const onRefresh = useCallback(async () => {
-    setLoading(true);
-    try {
-      // Re-fetch both user data and food stats
-      await Promise.all([fetchUserData(), fetchFoodList()]);
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchUserData, fetchFoodList]);
+  if (loading || !USER_ID) {
+    return (
+      <View style={styles.container}>
+        <Loading/>
+      </View>
+    );
+  }
 
 
 
@@ -509,29 +311,11 @@ export default function Settings() {
               </View>
             )}
           </View>
-
-          {/* Notification settings by Linh */}
-          <View style={styles.settingsContainer}>
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-                <Ionicons name="notifications-outline" size={22} color="#333" />
-                <Text style={{ fontSize: 16, color: "#333", fontWeight: "600" }}>Enable notifications</Text>
-              </View>
-              <Switch
-                value={userData?.pushEnabled}
-                onValueChange={onTogglePush}
-                disabled={savingPush || !userData}
-              />
-            </View>
-            <Text style={{ color: "#666", marginTop: 6 }}>
-              Receive reminders and updates.
-            </Text>
-          </View>
         </> }
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         scrollEnabled={!pickerOpen}
-        refreshing={loading}
+        refreshing={refreshing}
         onRefresh={onRefresh}
         contentContainerStyle={{ flexGrow: 1 }}
       />
@@ -580,6 +364,7 @@ const styles = StyleSheet.create({
     overflow: 'visible',
     shadowColor: "#bbb",
     shadowRadius: 5,
+    zIndex: 2,
     elevation: 5,
   },
   input: {

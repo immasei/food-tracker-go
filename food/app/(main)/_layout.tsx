@@ -42,7 +42,7 @@ export default function MainLayout() {
           name="scanner"
           options={{
             title: "Scanner",
-            headerTitle: "Add food by Scanner",
+            headerTitle: "Add Food by Scanner",
             tabBarIcon: () => <Ionicons size={24} name="scan-outline" />,
           }}
         />

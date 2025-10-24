@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useContext, useCallback, } from 'react';
-import { View, Text, StyleSheet, Switch, FlatList, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Switch, FlatList, ScrollView, TouchableOpacity, Platform, Alert } from 'react-native';
 import { useRouter } from "expo-router";
 import { AuthContext } from "../../contexts/AuthContext";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import firebaseApp from "../../config/firebaseConfig";
 import { getFirestore, doc, getDoc, updateDoc, getDocs, collection, query, where } from "firebase/firestore";
 
-// Imports for location and notifications by Linh
-import * as Location from "expo-location";
+// Imports notifications by Linh
 import { useToast } from "../../components/Toast";
+import Loading from "@/components/Loading"
+import { User, UStats } from "@/types/user"
+import { fetchUser, fetchStats, updateUser } from "@/services/userService";
 import { sendExpoPush, registerForPushAndSave } from "../(profile2)/utils/pushNotification"
 
 
@@ -53,150 +55,55 @@ type Location = {
 
 // NotificationSettings React Component
 export default function NotificationSettings() {
+  const router = useRouter();  // Expo router for url jumping
   const { user, authChecked } = useContext(AuthContext);     // Use AuthContext to get user info and logout method
-  const [userData, setUserData] = useState<UserData | null>(null);   // Variable to store user data
+  const USER_ID = user?.uid ?? null;  // Current user ID used for check logged in status
+  const [userData, setUserData] = useState<User | null>(null);   // Variable to store user data
+  const [stats, setStats] = useState<UStats>({ totalItems: 0, expiringItems: 0, expiredItems: 0, sharedItems: 0 });
+  const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(false);
 
-  // Used for notification content
-  const [expiringItems, setExpiringItems] = useState(0);
-  const [expiredItems, setExpiredItems] = useState(0);
-
-  // Variable to store settings data
-  const [settings, setSettings] = useState<SettingsState>({
-    notifyTime: new Date(),
-    expirationThreshold: 3,
-    enableSound: true,
-    showExpiringFirst: true,
-  });
-
-
-
-  // Location & push notification by Linh
+  // Push notification by Linh
   const { show, Toast } = useToast(); // Toast for in-app
   // savingPush: Disable push toggle button when button is switching
   const [savingPush, setSavingPush] = useState(false);
 
 
 
-  // Auto start 1：Load settings
-  useEffect(() => {
-    loadSettings();
-  }, []);
-
-  // Method to load settings data from async storage
-  const loadSettings = async () => {
-    try {
-      const savedSettings = await AsyncStorage.getItem('appSettings');
-      if (savedSettings) {
-        const parsedSettings = JSON.parse(savedSettings);
-        setSettings({
-          ...parsedSettings,
-          notifyTime: new Date(parsedSettings.dailyReminderTime),
-        });
-      }
-    } catch (error) {
-      console.error('Error loading settings:', error);
-    }
-  };
-
-  // Method to save settings data to async storage
-  const saveSettings = async (newSettings: SettingsState) => {
-    try {
-      await AsyncStorage.setItem('appSettings', JSON.stringify(newSettings));
-    } catch (error) {
-      console.error('Error saving settings:', error);
-    }
-  };
-
-  // Method to change the settings data variable
-  const handleSettingChange = (key: keyof SettingsState, value: any) => {
-    const newSettings = { ...settings, [key]: value };
-    setSettings(newSettings);
-    saveSettings(newSettings);
-  };
-
-  // Conditional auto-start 2: Fetch user data
-  useEffect(() => {
-    // Check if user is logged in
-    if (!authChecked) return; // If auth state is not checked, skip the code.
-    if (!user?.uid) {     // If no user is logged in
-      setUserData(null);  // Reset user data variable
+  // Method to fetch user data
+  // Used in pull-to-refresh handler by Linh
+  const onRefresh = useCallback(async () => {
+    if (!USER_ID) {
+      show("Please login first.", "danger");
       return;
     }
-    fetchUserData();
-  }, [authChecked, user?.uid]); // Re-run when authCheck state or user ID changes
-
-  // Method to fetch user data from Firebase
-  const fetchUserData = async () => {
+    setRefreshing(true);
     try {
-      const snapshot1 = await getDoc(doc(db, "users", user.uid));
-      if (snapshot1.exists()) {
-        const data = snapshot1.data() as Partial<UserData>;
-        const tastePref = typeof data.taste_pref === "string" ? data.taste_pref : "";
-        const allergyInfo = typeof data.allergy_info === "string" ? data.allergy_info : "";
-        const location = typeof data.location === "object" ? data.location : { formatted: "" };
+      // re-fetch both
+      const [userRes, statsRes] = await Promise.all([
+        fetchUser(USER_ID),
+        fetchStats(USER_ID),
+      ]);
 
-        setUserData({
-          id: snapshot1.id,
-          username: data.username ?? "",
-          email: data.email ?? "",
-          phone_no: data.phone_no ?? "",
-          taste_pref: tastePref,
-          allergy_info: allergyInfo,
-          location: location,
-          pushEnabled: data.pushEnabled ?? false,
-        });
-      } else {
-        setUserData(null);
-      }
-    } catch (error) {
-      console.error("Error fetching user:", error);
+      setUserData(userRes);
+      setStats(statsRes);
+      setPushEnabled(Boolean(userRes?.pushEnabled)); // Load cloud push switch setting
+    } catch (err) {
+      show("ERR: loading user data", "danger");
+      console.error("Error refreshing:", err);
+    } finally {
+      setRefreshing(false);
+      setLoading(false);
     }
-  };
+  }, [USER_ID]);
   
-  // Method to fetch food list from Firebase and calculate expiring/expired items
-  const fetchFoodList = async () => {
-    try {
-      const foodQuery = query(collection(db, "food"), where("userId", "==", user.uid));
-      const snapshot2 = await getDocs(foodQuery);
+  // Auto start
+  useEffect(() => {
+    onRefresh();
+    }, [onRefresh]);
 
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const soon = new Date(today);
-      soon.setDate(today.getDate() + settings.expirationThreshold);
 
-      // Function to parse expiry date from various formats
-      const parseExpiryDate = (value: unknown): Date | null => {
-        if (typeof value === "string" && value.trim().length > 0) {
-          const dt = new Date(value);
-          return Number.isNaN(dt.getTime()) ? null : dt;
-        }
-        if (value && typeof value === "object" && typeof (value as any).toDate === "function") {
-          const dt = (value as any).toDate();
-          return dt instanceof Date && !Number.isNaN(dt.getTime()) ? dt : null;
-        }
-        return null;
-      };
-
-      // Loop through each food item to calculate expiry stats
-      snapshot2.forEach((docSnap) => {
-        const data = docSnap.data() ?? {};
-
-        // Check expiry status and count expiring & expired items
-        const expiry = parseExpiryDate((data as any).expiryDate);
-        if (expiry) {
-          if (expiry < today) {
-            setExpiredItems((prev) => prev + 1);
-          } else if (expiry <= soon) {
-            setExpiringItems((prev) => prev + 1);
-          }
-        }
-      });
-
-    } catch (error) {
-      console.error("Error fetching food stats:", error);
-    }
-  };
 
   // Method to handle change of food list sorting toggle
   const handleChangeFoodListSorting = (value: boolean) => {
@@ -207,15 +114,32 @@ export default function NotificationSettings() {
 
   // Method to handle toggle push notification button by Linh
   const onTogglePush = async (val: boolean) => {
-    if (!userData) return;
+    if (!USER_ID) {
+      show("Please login first.", "danger");
+      return;
+    }
+    // Check if the current platform is Android
+    /*if (Platform.OS === "android") {
+      Alert.alert(
+        "Not available on Android",
+        "Push notifications are not supported or disabled for Android devices yet."
+      );
+      return;
+    }*/
+    /* This check is useless, because the error message occurs at the time 
+       just opening the app, at the login page, not when toggling notifacation button.
+       On Android phone, user can see the toast for toggling the button. There are no error about toggling the button.
+       If we keep the library imported, the error message will show up when opening the app.
+       So the solution is opening the app in advance, or not using Android phone, so this error message will not be seen.
+    */
     setSavingPush(true);
     if (val) {  // Toggle on
       // Send one push notification now when toggled on
       await sendPushNoti();
     } else {  // Toggle off
       // Save setting to DB
-      await updateDoc(doc(db, "users", userData.id), { pushEnabled: false });
-      fetchUserData();  // Manually update user data after push setting is saved
+      await updateUser(USER_ID, { pushEnabled: false });
+      setPushEnabled(false);  // Manually update user data after push setting is saved
       show("Push disabled", "warning");
     }
     setSavingPush(false);
@@ -226,12 +150,13 @@ export default function NotificationSettings() {
     if (!userData) return;
     try {
       const token = await registerForPushAndSave(userData.id);
-      await fetchUserData();  // Fetch user data after registering for push
-      await fetchFoodList(); // Fetch food stats when used to send push
+      setPushEnabled(true);
+      const stats = await fetchStats(USER_ID);   // Fetch food stats
+      const expiringItems = stats.expiringItems; // Calculate expiring items
+      const expDays = user.expring_days ? user.expring_days : 3; // Read expring days setting from cloud, default 3 days.
 
       // Prepare notification content
       const title = "Food expiring soon";
-      const expDays = settings.expirationThreshold;
       let body = "";
       if (expiringItems > 0) {
         body = `No items expiring in <=${expDays} days`; 
@@ -243,9 +168,7 @@ export default function NotificationSettings() {
       
       // Send push notification using Expo
       await sendExpoPush(token, title, body, { type: "expiring-food-summary", count: expiringItems });
-
       show("Push enabled", "success");
-      
     } catch (e: any) {
       console.error(e);
       show(`Push error: ${e?.message ?? e}`, "danger");
@@ -254,16 +177,13 @@ export default function NotificationSettings() {
     }
   };
 
-  // Pull-to-refresh handler by Linh
-  const onRefresh = useCallback(async () => {
-    setLoading(true);
-    try {
-      // Re-fetch both user data and food stats
-      await Promise.all([fetchUserData(), fetchFoodList()]);
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchUserData, fetchFoodList]);
+  if (loading || !USER_ID) {
+    return (
+      <View style={styles.container}>
+        <Loading/>
+      </View>
+    );
+  }
 
 
 
@@ -288,7 +208,7 @@ export default function NotificationSettings() {
             <View style={styles.settingItem}>
               <Text style={styles.settingLabel}>Enable notifications</Text>
               <Switch
-                value={userData?.pushEnabled}
+                value={pushEnabled}
                 onValueChange={onTogglePush}
                 disabled={savingPush || !userData}
               />
@@ -299,16 +219,14 @@ export default function NotificationSettings() {
               onPress={()=>{}}
             >
               <Text style={styles.settingLabel}>Time to notify</Text>
-              <Text style={styles.timeText}>
-                {settings.notifyTime.toLocaleTimeString().slice(0, 5)}
-              </Text>
+              <Text style={styles.timeText}> 8:00 AM </Text>
             </TouchableOpacity>
 
             <View style={styles.settingItem}>
               <Text style={styles.settingLabel}>Enable sound</Text>
               <Switch
-                value={settings.enableSound}
-                onValueChange={(value) => handleSettingChange('enableSound', value)}
+                value={true}
+                onValueChange={() => {}}
               />
             </View>
           </View>
@@ -319,14 +237,14 @@ export default function NotificationSettings() {
             
             <View style={styles.settingItem}>
               <Text style={styles.settingLabel}>
-                Notify before expiration: {settings.expirationThreshold} days
+                Notify before expiration: {3} days
               </Text>
             </View>
 
             <View style={styles.settingItem}>
               <Text style={styles.settingLabel}>Show expiring items first</Text>
               <Switch
-                value={settings.showExpiringFirst}
+                value={true}
                 onValueChange={handleChangeFoodListSorting}
               />
             </View>
@@ -334,7 +252,7 @@ export default function NotificationSettings() {
         </> }
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
-        refreshing={loading}
+        refreshing={refreshing}
         onRefresh={onRefresh}
         contentContainerStyle={{ flexGrow: 1 }}
       />
