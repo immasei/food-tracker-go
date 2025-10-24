@@ -1,8 +1,8 @@
-// (profile2)/UserProfile.tsx
+// (profile)/UserProfile.tsx
 import React, { useState, useEffect, useContext, useCallback, useRef } from "react";
 import {
   StyleSheet, Text, View, TouchableOpacity,
-  Alert, Switch, ActivityIndicator, FlatList
+  Alert, Switch, ActivityIndicator, FlatList, Platform
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -98,6 +98,15 @@ const UserProfile = () => {
       show("Please login first.", "danger");
       return;
     }
+    // Check if the current platform is Android
+    if (Platform.OS === "android") {
+      Alert.alert(
+        "Not available on Android",
+        "Push notifications are not supported or disabled for Android devices yet."
+      );
+      return;
+    }
+
     setSavingPush(true);
     try {
       if (val) {

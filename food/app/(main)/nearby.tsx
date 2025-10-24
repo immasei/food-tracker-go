@@ -1,5 +1,5 @@
-// import Nearby from "../(nearby)/Nearby";
+import NearbyDiscovery from "../(nearby)/NearbyDiscovery";
 
-// export default function FoodShareScreen() {
-//   return <Nearby />;
-// }
+export default function FoodShareScreen() {
+  return <NearbyDiscovery />;
+}

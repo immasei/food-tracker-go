@@ -20,6 +20,14 @@ export const toYMD = (v: any): string | null => {
 
 const today = () => startOfDay(new Date());
 
+export function todayYMD() {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 // if no date -> Infinity days left (never expires)
 export const daysLeft = (iso: string | null | undefined): number => {
     if (!iso || !iso.trim()) return Number.POSITIVE_INFINITY;
