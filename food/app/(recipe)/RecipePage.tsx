@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { Alert, FlatList, Pressable, SafeAreaView, Text, TextInput, View, StyleSheet, Platform, ScrollView, ActivityIndicator, Button } from "react-native";
-import { useToast } from "../../components/Toast";
+import { useToast } from "@/components/Toast";
 import FoodCard from "../(tracker)/components/FoodCard";
 import EditItemModal from "../(tracker)/components/EditItemModal";
 import { shadow, palette } from "./styles";
-import { Food } from "../(tracker)/types/food";
-import { NAMES_KEY, CATS_KEY, loadRecents } from "../(tracker)/utils/recents";
-import { deleteItem, upsertItem } from "../(tracker)/utils/firebase";
-import { useFoodItems } from "../(tracker)/utils/hooks";
+import { Food } from "@/types/food";
+import { NAMES_KEY, CATS_KEY, loadRecents } from "@/utils/recents";
+import { deleteFood, upsertFood } from "@/services/foodService";
+import { fetchFoods } from "../(tracker)/utils/hooks";
 import { generateRecipe } from "./utils/gemini";
 import Markdown from 'react-native-markdown-display';
 import { router } from "expo-router";
