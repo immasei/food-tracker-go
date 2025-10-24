@@ -404,6 +404,7 @@ const UserProfile = () => {
             >
               <Text style={styles.btnText}>Log Out</Text>
             </TouchableOpacity>
+
           </>
         }
         keyboardShouldPersistTaps="handled"

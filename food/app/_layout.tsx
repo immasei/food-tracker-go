@@ -81,9 +81,36 @@ export default function RootLayout() {
 
           {/* Settings page */}
           <Stack.Screen
-            name="(settings)/settings"
+            name="settings/settings"
             options={{
               title: "Settings",
+              headerShown: true,
+            }}
+          />
+
+          {/* Settings page */}
+          <Stack.Screen
+            name="settings/userinfo"
+            options={{
+              title: "User Information Settings",
+              headerShown: true,
+            }}
+          />
+
+          {/* Settings page */}
+          <Stack.Screen
+            name="settings/location"
+            options={{
+              title: "Location Settings",
+              headerShown: true,
+            }}
+          />
+
+          {/* Settings page */}
+          <Stack.Screen
+            name="settings/notification"
+            options={{
+              title: "Notification Settings",
               headerShown: true,
             }}
           />
