@@ -1,7 +1,8 @@
+// (scanner)/utils/parser.tsx
 import { isValid, parse, format } from "date-fns";
 
-// normalise common date formats to YYYY-MM-DD
-export function tryParseDateToYMD(raw: string): string | null {
+// --- normalise common date formats to YYYY-MM-DD
+function tryParseDateToYMD(raw: string): string | null {
   const s = raw.trim();
 
   // 2025-12-12 or 2025/12/12
@@ -58,7 +59,7 @@ export function tryParseDateToYMD(raw: string): string | null {
   return null;
 }
 
-// heuristic: prefer short 1–3 word noun-ish phrases + avoid marketing & boilerplate
+// --- heuristic: prefer short 1–3 word noun-ish phrases + avoid marketing & boilerplate
 function guessName(text: string): string {
   const lines = text
     .split(/\r?\n/)
@@ -118,7 +119,7 @@ function guessName(text: string): string {
     .join(" ");
 }
 
-
+// --- main parser
 export function deriveFromOCR(text: string, lines: string[]) {
   // expiry: take earliest valid date found (often the real expiry)
   const candidates = new Set<string>();

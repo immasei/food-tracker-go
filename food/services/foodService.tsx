@@ -1,22 +1,29 @@
-import firebaseApp from "../../../config/firebaseConfig";
-import { getFirestore, addDoc, deleteDoc, updateDoc, doc, serverTimestamp, collection } from "firebase/firestore";
-import { saveRecent, NAMES_KEY, CATS_KEY, loadRecents } from "./recents";
-import { Food } from "../types/food";
+// @/services/foodService.tsx
+import { db } from '@/config/firebaseFirestore';
+import { COLL } from "@/config/firebaseCollection";
+import {
+  addDoc,
+  deleteDoc,
+  updateDoc,
+  doc,
+  serverTimestamp,
+  collection,
+} from "firebase/firestore";
+import { saveRecent, NAMES_KEY, CATS_KEY, loadRecents } from "@/utils/recents";
+import { Food } from "@/types/food";
 
-export const db = getFirestore(firebaseApp);
-
-export async function deleteItem(id: string) {
-  await deleteDoc(doc(db, "food", id));
+export async function deleteFood(id: string) {
+  await deleteDoc(doc(db, COLL.FOOD, id));
 }
 
-export async function upsertItem(editing: Food, USER_ID: string) {
+export async function upsertFood(editing: Food, USER_ID: string) {
   const name = editing.name?.trim() || null;
   const category = editing.category?.trim() || null;
   const expiryDate = editing.expiryDate?.trim() || null; // null > never expires
   const shared = !!editing.shared;
 
   if (editing.id) {
-    await updateDoc(doc(db, "food", editing.id), {
+    await updateDoc(doc(db, COLL.FOOD, editing.id), {
       userId: USER_ID,
       name, 
       category, 
@@ -25,7 +32,7 @@ export async function upsertItem(editing: Food, USER_ID: string) {
       updatedAt: serverTimestamp(),
     });
   } else {
-    await addDoc(collection(db, "food"), {
+    await addDoc(collection(db, COLL.FOOD), {
       userId: USER_ID,
       name, 
       category, 
@@ -45,3 +52,4 @@ export async function upsertItem(editing: Food, USER_ID: string) {
     recentCats: await loadRecents(CATS_KEY(USER_ID)),
   };
 }
+

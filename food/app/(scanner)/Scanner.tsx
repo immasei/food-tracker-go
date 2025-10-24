@@ -1,40 +1,41 @@
+// (scanner)/Scanner.tsx
 import React, { useCallback, useEffect, useRef, useState, useContext } from "react";
-import { View, Text, StyleSheet, Pressable, FlatList, Button, Image, ActivityIndicator, Platform } from "react-native";
+import { View, Text, StyleSheet, Pressable, FlatList, Button, Image, ActivityIndicator } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
-import { cloudOCR, OCRResult } from "./utils/ocr";
+import { useToast } from "@/components/Toast";
+import Loading from "@/components/Loading";
+import { AuthContext } from "@/contexts/AuthContext";
+import { upsertFood } from "@/services/foodService";
+import { cloudOCR, OcrResult } from "./utils/ocr";
 import { deriveFromOCR } from "./utils/parser";
-import { upsertItem } from "../(tracker)/utils/firebase";
-import { useToast } from "../../components/Toast";
-import { palette, shadow, styles } from "./styles";
-import { NAMES_KEY, loadRecents } from "../(tracker)/utils/recents";
-import { AuthContext } from "../../contexts/AuthContext";
+import { styles } from "./styles";
 
-type PhotoItem = { id: string; uri: string; ocr?: OCRResult; error?: string };
+type PhotoItem = { id: string; uri: string; ocr?: OcrResult; error?: string };
 type CameraRef = React.ComponentRef<typeof CameraView>;
 
-export default function ScannerScreen() {
+export default function Scanner() {
   const { show, Toast } = useToast();
   
   const { user } = useContext(AuthContext);
-  const USER_ID = user.uid;
+  const USER_ID = user?.uid ?? null;
 
   const cameraRef = useRef<CameraRef | null>(null);
-
   const [permission, requestPermission] = useCameraPermissions();
+
   const [shooting, setShooting] = useState(false);
+  const [saving, setSaving] = useState(false);
+  
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [guessName, setGuessName] = useState<string | null>(null);
   const [guessExpiry, setGuessExpiry] = useState<string | null>(null);
-  const [recentNames, setRecentNames] = useState<string[]>([]);
   const [processing, setProcessing] = useState(false);
 
   // ----- camera permission button (auto asked first time) & dont press never allowed ---------
   useEffect(() => {
     (async () => {
       if (!permission?.granted) await requestPermission();
-      setRecentNames(await loadRecents(NAMES_KEY(USER_ID)));
     })();
-  }, []);
+  }, [permission?.granted, requestPermission]);
 
   // new ocr coming in & trigger
   useEffect(() => {
@@ -92,8 +93,15 @@ export default function ScannerScreen() {
   const canAdd = !!(guessName || guessExpiry);
 
   const onSave = useCallback(async () => {
+    if (!USER_ID) {
+      show("Please login first.", "danger");
+      return;
+    }
+
+    if (saving) return;
+    setSaving(true);
     try {
-      await upsertItem({
+      await upsertFood({
         id: "",
         userId: USER_ID,
         name: guessName ?? null,
@@ -106,10 +114,13 @@ export default function ScannerScreen() {
       resetAll();
     } catch (e) {
       show("Save failed.", "danger");
+    } finally {
+      setSaving(false);
     }
-  }, [guessName, guessExpiry, resetAll, show]);
+  }, [USER_ID, guessName, guessExpiry, resetAll, show]);
 
   const handleAddPress = useCallback(() => {
+    if (saving) return;
     if (! (guessName || guessExpiry) ) {
       show("Scan at least one field (Item or Expiry) before adding.", "danger");
       return;
@@ -122,12 +133,27 @@ export default function ScannerScreen() {
   const green = (ok: boolean) => ({ color: ok ? "#9AE6B4" : "#FCA5A5" });
 
   // ---------- get permission (again) if havent -------------
-  if (!permission) return <View style={styles.center}><ActivityIndicator /></View>;
+  if (!permission) {
+    return (
+      <View style={styles.center}>
+        <Loading text="Requesting permission..."/>
+      </View>
+    );
+  }
+  
   if (!permission.granted) {
     return (
       <View style={styles.center}>
         <Text style={styles.message}>We need camera access.</Text>
         <Button onPress={requestPermission} title="grant permission" />
+      </View>
+    );
+  }
+
+  if (!USER_ID) {
+    return (
+      <View style={styles.center}>
+        <Loading text="Please login. Redirecting..."/>
       </View>
     );
   }
@@ -150,10 +176,18 @@ export default function ScannerScreen() {
             // disabled={!canAdd || processing}
             onPress={handleAddPress}
           >
-            <Text style={styles.btnText}>Add</Text>
+            {saving ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.btnText}>Add</Text>
+            )}
           </Pressable>
           <Pressable onPress={takePicture} style={[styles.btn, styles.btnPrimary]} disabled={shooting}>
-            <Text style={styles.btnText}>{shooting ? "..." : "Capture"}</Text>
+            {shooting ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.btnText}>Capture</Text>
+            )}
           </Pressable>
           <Pressable onPress={resetAll} style={[styles.btn, styles.btnGrey]} disabled={!photos.length && !guessName && !guessExpiry}>
             <Text style={styles.btnText}>Reset</Text>
