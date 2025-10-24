@@ -4,7 +4,7 @@ import { View, Text, StyleSheet, ActivityIndicator, Pressable, FlatList, Modal, 
 import MapView, { Marker, Callout, Region, LatLng, Circle } from "react-native-maps";
 import * as Location from "expo-location";
 import { Ionicons } from "@expo/vector-icons";
-import { AuthContext } from "../../contexts/AuthContext";
+import { AuthContext } from "@/contexts/AuthContext";
 import AddressPicker from "@/components/AddressPicker";
 import { daysLeft, isExpired } from "@/utils/dates";
 import { fetchSharedFood, fetchSharedFoodCount } from "@/services/foodService";
