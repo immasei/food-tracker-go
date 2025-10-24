@@ -83,6 +83,7 @@ const UserProfile = () => {
 
       setUserData(userRes);
       setStats(statsRes);
+      setPushEnabled(Boolean(userRes?.pushEnabled)); // Load cloud push switch setting
 		} catch (err) {
       show("ERR: loading user data", "danger");
       console.error("Error refreshing:", err);

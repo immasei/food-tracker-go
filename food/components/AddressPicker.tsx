@@ -141,6 +141,7 @@ const AddressPicker = forwardRef<AddressPickerRef, Props>(({ onPicked, onOpenCha
           language: "en",
           components: "country:au",
         }}
+        timeout={10000}
         onPress={(data, details) => {
           if (!details) return;
           const comps = details.address_components || [];
