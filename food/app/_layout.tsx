@@ -7,8 +7,8 @@ import { Stack } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useColorScheme } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { AuthProvider } from "../contexts/AuthContext";
 import * as Notifications from "expo-notifications";
+import { AuthProvider } from "@/contexts/AuthContext";
 import 'react-native-get-random-values';
 
 Notifications.setNotificationHandler({

@@ -1,19 +1,18 @@
-// src/features/food/hooks/useFoodItems.ts
+// (tracker)/utils/hooks.tsx
 import { useEffect, useMemo, useState } from "react";
-import {
-  collection, query as fsQuery, onSnapshot, orderBy, where, writeBatch, doc, serverTimestamp,
-} from "firebase/firestore";
-import { db } from "./firebase";
-import { daysLeft, isExpired, toISO, toYMD } from "./dates";
-import { Food } from "../types/food";
+import { collection, query as fsQuery, onSnapshot, orderBy, where } from "firebase/firestore";
+import { db } from '@/config/firebaseFirestore';
+import { COLL } from "@/config/firebaseCollection";
+import { daysLeft, isExpired, toISO, toYMD } from "@/utils/dates";
+import { Food } from "@/types/food";
 
-export function useFoodItems(search: string, USER_ID:string) {
+export function fetchFoods(search: string, USER_ID:string) {
   const [items, setItems] = useState<Food[]>([]);
 
   useEffect(() => {
     // orderBy(expiryDate) is okay even with nulls
     const q = fsQuery(
-      collection(db, "food"),
+      collection(db, COLL.FOOD),
       where("userId", "==", USER_ID),
       orderBy("expiryDate", "asc")
     );

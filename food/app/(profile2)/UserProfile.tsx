@@ -1,57 +1,20 @@
+// (profile2)/UserProfile.tsx
 import React, { useState, useEffect, useContext, useCallback, useRef } from "react";
 import {
-  StyleSheet, Text, View, TouchableOpacity, ScrollView,
-  ActivityIndicator, Alert, RefreshControl,
-  Platform,
+  StyleSheet, Text, View, TouchableOpacity,
+  Alert, Switch, ActivityIndicator, FlatList
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
-import { daysLeft, isExpired } from "../(tracker)/utils/dates"; 
-import firebaseApp from "../../config/firebaseConfig";
-import {
-  getFirestore, collection, getDocs, query, where,
-  updateDoc, doc, serverTimestamp, getDoc
-} from "firebase/firestore";
-import { AuthContext } from "../../contexts/AuthContext";
-import AddressPicker, { reverseGeocodeWithGoogle } from "./AddressPicker";
-import { savePickedAddress } from "./firebase";
-import { Switch } from "react-native"; 
-import { useToast } from "../../components/Toast";
-import { sendExpoPush, registerForPushAndSave } from "./PushNotification"
-import MapScreen from "./Map";
-
-// --- firebase ---
-const db = getFirestore(firebaseApp);
-
-type Stats = {
-  totalItems: number;
-  expiringItems: number;
-  expiredItems: number;
-  sharedItems: number;
-};
-
-type Location = {
-  placeId?: string | null;
-  formatted?: string | null;
-  suburb?: string | null;
-  state?: string | null;
-  postcode?: string | null;
-  country?: string | null;
-  lat?: number | null;
-  lng?: number | null;
-  updatedAt?: any;
-};
-
-type UserData = {
-  id: string;
-  userid: string;
-  username?: string | null;
-  email?: string | null;
-  phone_no?: string | null;
-  location?: Location | null;
-  pushEnabled?: boolean; 
-};
+import { serverTimestamp } from "firebase/firestore";
+import { useToast } from "@/components/Toast";
+import Loading from "@/components/Loading"
+import AddressPicker, { reverseGeocodeWithGoogle, savePickedAddress } from "@/components/AddressPicker";
+import { AuthContext } from "@/contexts/AuthContext";
+import { User, UStats } from "@/types/user"
+import { fetchUser, fetchStats, updateUser } from "@/services/userService";
+import { sendExpoPush, registerForPushAndSave } from "./utils/pushNotification";
 
 type PickedAddress = {
   placeId: string;
@@ -66,11 +29,11 @@ type AddressPickerRef = {
   clear: () => void;
 };
 
-const User = () => {
+const UserProfile = () => {
   const { show, Toast } = useToast();
     
   const { user, logout } = useContext(AuthContext);
-  const USER_ID = user.uid;
+  const USER_ID = user?.uid ?? null;
   const router = useRouter();
 
   // --------- pull to refresh --------------
@@ -78,8 +41,8 @@ const User = () => {
 
   // ------initial load --------
   const [loading, setLoading] = useState(true);
-  const [userData, setUserData] = useState<UserData | null>(null);
-  const [stats, setStats] = useState<Stats>({ totalItems: 0, expiringItems: 0, expiredItems: 0, sharedItems: 0 });
+  const [userData, setUserData] = useState<User | null>(null);
+  const [stats, setStats] = useState<UStats>({ totalItems: 0, expiringItems: 0, expiredItems: 0, sharedItems: 0 });
 
   // ------ loc ------------
   // when press save address/ use current location btn -> lock btns temporarily to avoid multiple triggers
@@ -98,91 +61,52 @@ const User = () => {
   const [pushEnabled, setPushEnabled] = useState(false);
   const [savingPush, setSavingPush] = useState(false);
 
-
   // --------- logout -----------
   async function doLogout() {
     await logout();
     router.replace("/login");
   }
 
-  // --------- fetch the current user info --------
-  async function fetchUser() {
-		const ref = doc(db, "users", USER_ID);
-		const snap = await getDoc(ref);
-		if (snap.exists()) {
-			const userData = snap.data();
-			const loc = (userData.location ?? null) as Location | null;
-
-			setUserData({
-				id: snap.id,
-				userid: userData.userid ?? USER_ID,
-				username: userData.username ?? null,
-				email: userData.email ?? null,
-				phone_no: userData.phone_no ?? null,
-				location: loc,
-        pushEnabled: Boolean(userData.pushEnabled),
-			});
-      setPushEnabled(Boolean(userData.pushEnabled));
-		}
-  }
-
-  // -------- fetch food stats for this user -----------
-	async function fetchStats() {
-		const qFood = query(collection(db, "food"), where("userId", "==", USER_ID));
-		const snap = await getDocs(qFood);
-
-		let total = 0;
-		let expiring = 0;
-		let expired = 0;
-    let shared = 0;
-
-		snap.forEach((d) => {
-      // num total
-			const x = d.data() as any;
-			total += 1;
-
-      // num shared
-      if (x.shared === true) shared += 1;
-
-      // expired and soon expiring (d<=3)
-			const ymd = x.expiryDate ?? null;
-			if (isExpired(ymd)) {
-				expired += 1;
-			} else {
-				const dl = daysLeft(ymd);
-				if (Number.isFinite(dl) && dl <= 3) expiring += 1;
-			}
-		});
-
-		setStats({
-			totalItems: total,
-			expiringItems: expiring,
-			expiredItems: expired,
-			sharedItems: shared,
-		});
-	}
-
 	// ------------ pull-to-refresh handler ---------
 	const onRefresh = useCallback(async () => {
+    if (!USER_ID) {
+      show("Please login first.", "danger");
+      return;
+    }
 		setRefreshing(true);
 		try {
 			// re-fetch both
-			await Promise.all([fetchUser(), fetchStats()]);
-		} finally {
-			setRefreshing(false);
-		}
-	}, [fetchUser, fetchStats]);
+			const [userRes, statsRes] = await Promise.all([
+        fetchUser(USER_ID),
+        fetchStats(USER_ID),
+      ]);
 
+      setUserData(userRes);
+      setStats(statsRes);
+		} catch (err) {
+      show("ERR: loading user data", "danger");
+      console.error("Error refreshing:", err);
+    } finally {
+      setRefreshing(false);
+      setLoading(false);
+    }
+	}, [USER_ID]);
+
+  // --------- push notification toggle button ---------
   const onTogglePush = async (val: boolean) => {
-    if (!userData) return;
+    if (!USER_ID) {
+      show("Please login first.", "danger");
+      return;
+    }
     setSavingPush(true);
     try {
       if (val) {
-        const token = await registerForPushAndSave(userData.id);
+        const token = await registerForPushAndSave(USER_ID);
         setPushEnabled(true);
 
         // compute N and send instant push
-        await fetchStats();
+        const stats = await fetchStats(USER_ID);
+
         const title = "Food expiring soon";
         const body = stats.expiringItems === 0 ? "No items expiring in <=3 days" :
                      stats.expiringItems === 1 ? "You have 1 item expiring in <=3 days" :
@@ -192,7 +116,7 @@ const User = () => {
 
         show("Push enabled", "success");
       } else {
-        await updateDoc(doc(db, "users", userData.id), { pushEnabled: false });
+        await updateUser(USER_ID, { pushEnabled: false });
         setPushEnabled(false);
         show("Push disabled", "warning");
       }
@@ -204,24 +128,44 @@ const User = () => {
     }
   };
 
+  const onSaveAddress = async () => {
+    if (!USER_ID) {
+      show("Please login first.", "danger");
+      return;
+    }
+    if (!pending) {
+      // if no selection yet, focus the picker
+      setTimeout(() => pickerRef.current?.focus(), 0);
+      return;
+    }
+    setSavingLoc(true);
+    try {
+      await savePickedAddress(USER_ID, pending);
+      const refreshed = await fetchUser(USER_ID);
+      setUserData(refreshed);
+      // Alert.alert("Saved", pending.formatted);
+      show("Saved: " + pending.formatted, "success");
+      setPending(null);                 // clear local selection after save
+      pickerRef.current?.clear();
+    } catch (e) {
+      console.error(e);
+      // Alert.alert("Error", "Failed to save address.");
+      show("ERR: Failed to save address.")
+    } finally {
+      setSavingLoc(false);
+    }
+
+  };
 
   // initial load
   useEffect(() => {
-    (async () => {
-      try {
-        await fetchUser();
-        await fetchStats();
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
+    onRefresh();
+  }, [onRefresh]);
+
 
 	// GPS -> reverse geocode -> save (use lat/lng -> send to google place api to get full address)
   async function useCurrentLocation() {
-    if (!userData) return;
+    if (!userData || !USER_ID) return;
     setSavingLoc(true);
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -237,7 +181,7 @@ const User = () => {
       const result = await reverseGeocodeWithGoogle(lat, lng);
 
       if (result) {
-        await savePickedAddress(userData.id, {
+        await savePickedAddress(USER_ID, {
           placeId: result.placeId,
           formatted: result.formatted,
           lat,
@@ -250,7 +194,7 @@ const User = () => {
 
       } else {
         // fallback: save just coords
-        await updateDoc(doc(db, "users", userData.id), {
+        await updateUser(USER_ID, {
           location: {
             ...(userData.location ?? {}),
             lat, lng,
@@ -261,8 +205,8 @@ const User = () => {
         show("Lat/lon saved.", "warning")
       }
 
-      const refreshed = await getDoc(doc(db, "users", userData.id));
-      setUserData(u => (u ? { ...u, location: (refreshed.data() as any).location ?? null } : u));
+      const refreshed = await fetchUser(USER_ID);
+      setUserData(refreshed);
 			// Alert.alert("Saved", "Current location saved.");
     } catch (e) {
       console.error(e);
@@ -273,193 +217,197 @@ const User = () => {
     }
   }
 
-  if (loading) {
+  if (loading || !USER_ID) {
     return (
-      <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
-        <ActivityIndicator />
+      <View style={styles.container}>
+        <Loading/>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        style={styles.scrollView}
+      <FlatList
+        data={[]}
+        renderItem={() => null}          
+        keyExtractor={() => "header"}
+        ListHeaderComponent={
+          <>
+            {/* profile */}
+            <View style={styles.profileSection}>
+              <Text style={styles.username}>{userData?.username || "Unknown"}</Text>
+              <Text style={styles.userDetail}>Email: {userData?.email || "—"}</Text>
+              <Text style={styles.userDetail}>Mobile: {userData?.phone_no || "—"}</Text>
+
+              <TouchableOpacity
+                style={styles.settingsButton}
+                onPress={doLogout}
+              >
+                <Ionicons name="log-out-outline" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+
+            {/* location */}
+            <View style={styles.locationContainer}>
+              <Text style={[styles.statsTitle, { paddingLeft: 0 }]}>Location</Text>
+              <Text style={{ color: "#666", marginBottom: 12 }}>
+                Pick your address (AU) or use current GPS.
+              </Text>
+
+              <View style={{ marginTop: 0, overflow: "visible" }}>
+                <AddressPicker
+                  ref={pickerRef}
+                  onPicked={(picked) => {
+                    setPending(picked);
+                    // no DB writes here
+                  }}
+                  onOpenChange={(open) => setPickerOpen(open)}   
+                />
+              </View>
+
+              {/* btn row: left = use selected address, right = use current GPS */}
+              <View style={styles.row}>
+                <TouchableOpacity
+                  style={[styles.saveBtn, styles.btnPrimary]}
+                  onPress={onSaveAddress}
+                  disabled={savingLoc || !userData}
+                >
+                  {savingLoc ? (
+                    <ActivityIndicator size="small" color="#fff"/>
+                  ) : (
+                    <Text style={styles.saveBtnText}>Save address</Text>
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.saveBtn, styles.btnSuccess]}
+                  onPress={useCurrentLocation}
+                  disabled={savingLoc || !userData}
+                >
+                  {savingLoc ? (
+                    <ActivityIndicator size="small" color="#fff"/>
+                  ) : (
+                    <Text style={styles.saveBtnText}>Use current</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+
+              {userData?.location && (
+                // see map icon button
+                <View style={styles.savedCard}>
+                  <View style={styles.savedHeader}>
+                    <Text style={{ color: "#333", fontWeight: "700" }}>Saved:</Text>
+                    <TouchableOpacity
+                      style={styles.mapIconInline}
+                      disabled={savingLoc || !userData}
+                      onPress={() => {
+                        router.push({
+                          pathname: "/Map",
+                          params: {
+                            lat: userData?.location?.lat,
+                            lng: userData?.location?.lng,
+                            formatted: userData?.location?.formatted,
+                          },
+                        });
+                      }}
+                    >
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                        {savingLoc ? (
+                          <ActivityIndicator size="small" color="#2563EB"/>
+                        ) : (
+                          <>
+                          <Text style={{ color: "#2563EB", fontSize: 11, fontWeight: 500 }}>Open Map</Text>
+                          <Ionicons name="map-outline" size={17} color="#2563EB" />
+                          </>
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                  </View>
+
+                  <Text style={{ color: "#666", flexShrink: 1 }}>
+                    {userData.location.formatted || "—"}
+                  </Text>
+                  <Text></Text>
+                  <Text style={{ color: "#666" }}>
+                    Lat/Lng: {userData.location.lat ?? "—"}, {userData.location.lng ?? "—"}
+                  </Text>
+                  <Text style={{ color: "#666" }}>
+                    Suburb/State/Postcode: {userData.location.suburb || "—"}{" "}
+                    {userData.location.state || "—"} {userData.location.postcode || ""}
+                  </Text>
+                  <Text style={{ color: "#666" }}>
+                    Country: {userData.location.country || "—"}
+                  </Text>
+                </View>
+              )}
+
+              {!userData?.location && (
+                <View style={{ marginTop: 12 }}>
+                  <Text style={{ color: "#333", fontWeight: "700" }}>Saved:</Text>
+                  <Text style={{ color: "#666" }}>(No address yet)</Text>
+                  <Text></Text>
+                  <Text style={{ color: "#666" }}>
+                    Lat/Lng: {"—"}
+                  </Text>
+                  <Text style={{ color: "#666" }}>
+                    Suburb/State/Postcode: {"—"}
+                  </Text>
+                  <Text style={{ color: "#666" }}>
+                    Country: {"—"}
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            {/* stats */}
+            <View style={styles.statsContainer}>
+              <Text style={styles.statsTitle}>Food tracking statistics</Text>
+              <View style={styles.statsGrid}>
+                <StatCard title="Total" value={stats.totalItems} icon="fast-food-outline" />
+                <StatCard title="Expiring" value={stats.expiringItems} icon="timer-outline" />
+                <StatCard title="Expired" value={stats.expiredItems} icon="warning-outline" />
+                <StatCard title="Shared" value={stats.sharedItems} icon="people-outline" />
+              </View>
+            </View>
+
+            {/* settings */}
+            <View style={styles.settingsContainer}>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                  <Ionicons name="notifications-outline" size={22} color="#333" />
+                  <Text style={{ fontSize: 16, color: "#333", fontWeight: "600" }}>Enable notifications</Text>
+                </View>
+                <Switch
+                  value={pushEnabled}
+                  onValueChange={onTogglePush}
+                  disabled={savingPush || !userData}
+                />
+              </View>
+              <Text style={{ color: "#666", marginTop: 6 }}>
+                Receive reminders and updates.
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.logoutBtn, styles.btnDanger]}
+              onPress={doLogout}
+            >
+              <Text style={styles.btnText}>Log Out</Text>
+            </TouchableOpacity>
+          </>
+        }
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         scrollEnabled={!pickerOpen}
-        keyboardDismissMode={Platform.OS === "ios" ? "on-drag" : "none"}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      >
-
-        {/* profile */}
-        <View style={styles.profileSection}>
-          <Text style={styles.username}>{userData?.username || "Unknown"}</Text>
-          <Text style={styles.userDetail}>Email: {userData?.email || "—"}</Text>
-          <Text style={styles.userDetail}>Mobile: {userData?.phone_no || "—"}</Text>
-
-          <TouchableOpacity
-            style={styles.settingsButton}
-            onPress={() => show(`Hello ${userData?.username ?? ""}!`, "success")}
-          >
-            <Ionicons name="person-outline" size={24} color="#333" />
-          </TouchableOpacity>
-        </View>
-
-        {/* location */}
-        <View style={styles.locationContainer}>
-          <Text style={[styles.statsTitle, { paddingLeft: 0 }]}>Location</Text>
-          <Text style={{ color: "#666", marginBottom: 12 }}>
-            Pick your address (AU) or use current GPS.
-          </Text>
-
-          <View style={{ marginTop: 0, overflow: "visible" }}>
-            <AddressPicker
-              ref={pickerRef}
-              onPicked={(picked) => {
-                setPending(picked);
-                // no DB writes here
-              }}
-              onOpenChange={(open) => setPickerOpen(open)}   
-            />
-          </View>
-
-          {/* btn row: left = use selected address, right = use current GPS */}
-          <View style={styles.row}>
-            <TouchableOpacity
-              style={[styles.saveBtn, styles.btnPrimary]}
-              onPress={async () => {
-                if (!userData) return;
-                if (!pending) {
-                  // if no selection yet, focus the picker
-                  setTimeout(() => pickerRef.current?.focus(), 0);
-                  return;
-                }
-                setSavingLoc(true);
-                try {
-                  await savePickedAddress(userData.id, pending);
-                  const refreshed = await getDoc(doc(db, "users", userData.id));
-                  setUserData(u => (u ? { ...u, location: (refreshed.data() as any).location ?? null } : u));
-                  // Alert.alert("Saved", pending.formatted);
-                  show("Saved: " + pending.formatted, "success");
-                  setPending(null);                 // clear local selection after save
-                  pickerRef.current?.clear();
-                } catch (e) {
-                  console.error(e);
-                  // Alert.alert("Error", "Failed to save address.");
-                  show("ERR: Failed to save address.")
-                } finally {
-                  setSavingLoc(false);
-                }
-              }}
-              disabled={savingLoc || !userData}
-            >
-              <Text style={styles.saveBtnText}>Save address</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.saveBtn, styles.btnSuccess]}
-              onPress={useCurrentLocation}
-              disabled={savingLoc || !userData}
-            >
-              <Text style={styles.saveBtnText}>{savingLoc ? "…" : "Use current"}</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View>
-            {/* display map */}
-            <TouchableOpacity
-              style={[styles.mapBtn]}
-              onPress={() => {
-                router.push({
-                  pathname: "/Map",
-                  params: {
-                    lat: userData?.location?.lat,
-                    lng: userData?.location?.lng,
-                    formatted: userData?.location?.formatted,
-                  },
-                });
-              }}
-              disabled={!userData?.location}
-            >
-              <Text style={styles.mapBtnText}>Start finding on map</Text>
-            </TouchableOpacity>
-          </View>
-
-          {userData?.location && (
-            <View style={{ marginTop: 12 }}>
-              <Text style={{ color: "#333", fontWeight: "700" }}>Saved:</Text>
-              <Text style={{ color: "#666" }}>{userData.location.formatted || "—"}</Text>
-              <Text></Text>
-              <Text style={{ color: "#666" }}>
-                Lat/Lng: {userData.location.lat ?? "—"}, {userData.location.lng ?? "—"}
-              </Text>
-              <Text style={{ color: "#666" }}>
-                Suburb/State/Postcode: {userData.location.suburb || "—"} {userData.location.state || "—"} {userData.location.postcode || ""}
-              </Text>
-              <Text style={{ color: "#666" }}>
-                Country: {userData.location.country || "—"}
-              </Text>
-            </View>
-          )}
-
-          {!userData?.location && (
-            <View style={{ marginTop: 12 }}>
-              <Text style={{ color: "#333", fontWeight: "700" }}>Saved:</Text>
-              <Text style={{ color: "#666" }}>(No address yet)</Text>
-              <Text></Text>
-              <Text style={{ color: "#666" }}>
-                Lat/Lng: {"—"}
-              </Text>
-              <Text style={{ color: "#666" }}>
-                Suburb/State/Postcode: {"—"}
-              </Text>
-              <Text style={{ color: "#666" }}>
-                Country: {"—"}
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {/* stats */}
-        <View style={styles.statsContainer}>
-          <Text style={styles.statsTitle}>Food tracking statistics</Text>
-          <View style={styles.statsGrid}>
-            <StatCard title="Total" value={stats.totalItems} icon="fast-food-outline" />
-            <StatCard title="Expiring" value={stats.expiringItems} icon="timer-outline" />
-            <StatCard title="Expired" value={stats.expiredItems} icon="warning-outline" />
-            <StatCard title="Shared" value={stats.sharedItems} icon="people-outline" />
-          </View>
-        </View>
-
-        {/* settings */}
-        <View style={styles.settingsContainer}>
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-              <Ionicons name="notifications-outline" size={22} color="#333" />
-              <Text style={{ fontSize: 16, color: "#333", fontWeight: "600" }}>Enable notifications</Text>
-            </View>
-            <Switch
-              value={pushEnabled}
-              onValueChange={onTogglePush}
-              disabled={savingPush || !userData}
-            />
-          </View>
-          <Text style={{ color: "#666", marginTop: 6 }}>
-            Receive reminders and updates.
-          </Text>
-        </View>
-
-        <TouchableOpacity
-          style={[styles.logoutBtn, styles.btnDanger]}
-          onPress={doLogout}
-        >
-          <Text style={styles.btnText}>Log Out</Text>
-        </TouchableOpacity>
-      </ScrollView>
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+        contentContainerStyle={{ flexGrow: 1 }}
+      />
       <Toast/>
     </View>
   );
+
+  
 };
 
 const StatCard = ({ title, value, icon }: { title: string; value: number; icon: string }) => (
@@ -470,17 +418,18 @@ const StatCard = ({ title, value, icon }: { title: string; value: number; icon: 
   </View>
 );
 
-export default User;
+export default UserProfile;
 
 // --- styles ---
 const styles = StyleSheet.create({
   btnDanger: { backgroundColor: "#EF4444", paddingVertical: 12, alignItems: "center" },
   btnText: { color: "#fff", fontWeight: "600", fontSize: 16 },
+  btnGrey: { backgroundColor: "#666666"},
   container: { flex: 1, backgroundColor: "#f5f5f5" },
   scrollView: { flex: 1 },
   bottomPadding: { height: 30 },
 
-  settingsButton: { position: "absolute", top: 20, right: 20, zIndex: 1, padding: 8 },
+  settingsButton: { position: "absolute", top: 20, right: 20, zIndex: 1, padding: 2 },
   profileSection: {
     paddingTop: 20, paddingBottom: 0, marginTop: 0, marginHorizontal: 20,
     alignItems: "center", borderRadius: 20
@@ -522,7 +471,7 @@ const styles = StyleSheet.create({
   },
 
   locationContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffffec',
     marginHorizontal: 20,
     borderRadius: 20,
     marginTop:15,
@@ -550,24 +499,41 @@ const styles = StyleSheet.create({
   },
   logoutBtn: {
     paddingVertical: 50,
-    borderRadius: 12,
+    borderRadius: 14,
     marginHorizontal: 20,
-
-
   },
   btnPrimary: { backgroundColor: "#2563EB" },
   btnSuccess: { backgroundColor: "#059669" },
   saveBtnText: { color: "#fff", fontWeight: "700" },
-  mapBtn: {
-    flex: 1,
-    backgroundColor: "#666666",
-    paddingVertical: 12,
-    alignItems: "center",
+  iconBtn: {
+    width: 48,
+    height: 30,
     borderRadius: 12,
-    marginTop: 7
+    alignItems: "center",
+    justifyContent: "center",
   },
-  mapBtnText: {
-    color: "#fff",
-    fontWeight: "700",
+  mapIconFloating: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    padding: 6,
   },
+  savedCard: {
+    marginTop: 8,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 1,
+  },
+  savedHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  mapIconInline: {
+    padding: 7,
+    backgroundColor: "#f1f5f9",
+    borderRadius: 8,
+  },
+
 });

@@ -1,8 +1,8 @@
+// (profile2)/Map.tsx
 import React, { useEffect, useState, useRef } from "react";
-import { View, StyleSheet, PermissionsAndroid, Platform,TouchableOpacity, Text } from "react-native";
+import { View, StyleSheet, TouchableOpacity, Text } from "react-native";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
-import * as Location from "expo-location";
-import AddressPicker, { reverseGeocodeWithGoogle, AddressPickerRef } from "./AddressPicker";
+import { AddressPickerRef } from "@/components/AddressPicker";
 import { useRouter, useLocalSearchParams } from "expo-router";
 
 export default function MapScreen() {

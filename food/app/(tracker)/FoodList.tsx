@@ -1,23 +1,25 @@
+// (tracker)/FoodList.tsx
 import React, { useEffect, useState, useContext } from "react";
-import { Alert, FlatList, Pressable, SafeAreaView, Text, TextInput, View, StyleSheet, Platform } from "react-native";
-import { useToast } from "../../components/Toast";
+import { Alert, FlatList, Pressable, Text, TextInput, View, StyleSheet, Platform } from "react-native";
+import { useToast } from "@/components/Toast";
+import Loading from "@/components/Loading"
+import { AuthContext } from "@/contexts/AuthContext";
+import { Food } from "@/types/food";
+import { NAMES_KEY, CATS_KEY, loadRecents } from "@/utils/recents";
+import { deleteFood, upsertFood } from "@/services/foodService";
 import FoodCard from "./components/FoodCard";
 import EditItemModal from "./components/EditItemModal";
+import { fetchFoods } from "./utils/hooks";
 import { shadow, palette } from "./styles";
-import { Food } from "./types/food";
-import { NAMES_KEY, CATS_KEY, loadRecents } from "./utils/recents";
-import { deleteItem, upsertItem } from "./utils/firebase";
-import { useFoodItems } from "./utils/hooks";
-import { AuthContext } from "../../contexts/AuthContext";
 
-const FoodListTab: React.FC = () => {
+export default function FoodList() {
   const { show, Toast } = useToast();
   
   const { user } = useContext(AuthContext);
-  const USER_ID = user.uid;
+  const USER_ID = user?.uid ?? null;
   
   const [search, setSearch] = useState("");
-  const { filteredSorted } = useFoodItems(search, USER_ID);
+  const { filteredSorted } = fetchFoods(search, USER_ID);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Food | null>(null);
@@ -25,13 +27,16 @@ const FoodListTab: React.FC = () => {
   const [recentNames, setRecentNames] = useState<string[]>([]);
   const [recentCats, setRecentCats] = useState<string[]>([]);
   
+  // --- initial load
   useEffect(() => {
+    if (!USER_ID) return;
     (async () => {
       setRecentNames(await loadRecents(NAMES_KEY(USER_ID)));
       setRecentCats(await loadRecents(CATS_KEY(USER_ID)));
     })();
-  }, []);
+  }, [USER_ID]);
 
+  // --- add item: open modal
   const openCreate = () => {
     setEditing({
       id: "",
@@ -45,22 +50,29 @@ const FoodListTab: React.FC = () => {
     setModalOpen(true);
   };
 
+  // --- edit item: open modal
   const openEdit = (item: Food) => {
     setEditing({ ...item });
     setModalOpen(true);
   };
 
+  // --- remove item: slide to delete
   const removeItem = async (id: string) => {
     try {
-      await deleteItem(id);
+      await deleteFood(id);
       show("Delete OK.", "danger");
     } catch (e) {
       Alert.alert("Delete failed", String(e));
     }
   };
 
+  // --- save edit changes: close modal
   const saveItem = async () => {
     if (!editing) return;
+    if (!USER_ID) {
+      show("Please login first.", "danger");
+      return;
+    }
 
     const { id, name, expiryDate, category, shared } = editing;
 
@@ -75,7 +87,7 @@ const FoodListTab: React.FC = () => {
     }
 
     try {
-      const { recentNames, recentCats } = await upsertItem(editing, USER_ID);
+      const { recentNames, recentCats } = await upsertFood(editing, USER_ID);
       setRecentNames(recentNames);
       setRecentCats(recentCats);
 
@@ -87,6 +99,7 @@ const FoodListTab: React.FC = () => {
     }
   };
 
+  // --- food item render form
   const renderItem = ({ item }: { item: Food }) => (
     <FoodCard
       item={item}
@@ -95,8 +108,16 @@ const FoodListTab: React.FC = () => {
     />
   );
 
+  if (!USER_ID) {
+    return (
+      <View style={styles.container}>
+        <Loading text="Please login. Redirecting..."/>
+      </View>
+    );
+  }
+
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.searchRow}>
         <TextInput
           placeholder="Search by name or category"
@@ -133,10 +154,11 @@ const FoodListTab: React.FC = () => {
       />
 
       <Toast />
-    </SafeAreaView>
+    </View>
   );
 };
 
+// --- styles
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: palette.bg },
     searchRow: { flexDirection: "row", gap: 10, paddingHorizontal: 16, paddingVertical: 8 },
@@ -162,5 +184,3 @@ const styles = StyleSheet.create({
     primaryBtnText: { color: palette.primaryText, fontWeight: "700" },
 
 });
-
-export default FoodListTab;

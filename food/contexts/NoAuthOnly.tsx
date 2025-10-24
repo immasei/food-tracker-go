@@ -1,7 +1,6 @@
 import React, { useContext, useEffect } from "react";
 import { AuthContext } from "../contexts/AuthContext";
 import { useRouter, useRootNavigationState, Redirect } from "expo-router";
-import { Text, View, ActivityIndicator } from "react-native";
 
 type Props = { children: React.ReactNode };
 

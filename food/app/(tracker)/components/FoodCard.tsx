@@ -1,8 +1,9 @@
+// (tracker)/components/EditItemModal.tsx
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Swipeable from "react-native-gesture-handler/Swipeable";
-import { daysLeft, isExpired } from "../utils/dates";
-import { Food } from "../types/food";
+import { Food } from "@/types/food";
+import { daysLeft, isExpired } from "@/utils/dates";
 import { palette, shadow } from "../styles";
 
 type Props = {
@@ -12,12 +13,12 @@ type Props = {
 };
 
 const RightActions = ({ onDelete }: { onDelete: () => void }) => (
-    <View style={styles.swipeDelete}>
-      <Pressable onPress={onDelete} style={styles.swipeDeleteBtn}>
-        <Text style={styles.swipeDeleteText}>Delete</Text>
-      </Pressable>
-    </View>
-  );
+  <View style={styles.swipeDelete}>
+    <Pressable onPress={onDelete} style={styles.swipeDeleteBtn}>
+      <Text style={styles.swipeDeleteText}>Delete</Text>
+    </Pressable>
+  </View>
+);
 
 // choose badge style based on expiry (null/empty = never expires)
 const statusStyle = (iso: string | null | undefined) => {

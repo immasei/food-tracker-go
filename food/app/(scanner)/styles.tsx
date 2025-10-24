@@ -1,3 +1,4 @@
+// (scanner)/styles.tsx
 import { Platform, StyleSheet } from "react-native";
 
 export const palette = {

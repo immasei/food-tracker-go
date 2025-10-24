@@ -8,9 +8,8 @@ import {
   signOut
 } from "firebase/auth";
 import firebaseApp from "../config/firebaseConfig";
-import { getFirestore, collection, getDocs, addDoc, setDoc, doc, serverTimestamp, getDoc } from "firebase/firestore";
-
-const db = getFirestore(firebaseApp);
+import { db } from "../config/firebaseFirestore";
+import { setDoc, doc, serverTimestamp } from "firebase/firestore";
 
 export const AuthContext = createContext(undefined as any);
 

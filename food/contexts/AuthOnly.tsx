@@ -1,14 +1,12 @@
-import React, { useContext, useEffect } from "react";
+import React, { useContext } from "react";
 import { AuthContext } from "../contexts/AuthContext";
-import { useRouter, useRootNavigationState, Redirect } from "expo-router";
-import { Text, View, ActivityIndicator } from "react-native";
+import { useRootNavigationState, Redirect } from "expo-router";
+import Loading from "@/components/Loading"
 
 type Props = { children: React.ReactNode };
 
 export default function AuthOnly({ children }: Props) {
-  // const context = useContext(AuthContext);
   const { authChecked, user } = useContext(AuthContext);
-  const router = useRouter();
   const rootNav = useRootNavigationState();
 
   // wait until the root navigator exists
@@ -19,12 +17,7 @@ export default function AuthOnly({ children }: Props) {
   }
 
   if (!authChecked || !user) {
-    return (
-      <View style={{ flex:1, justifyContent:"center", alignItems:"center" }}>
-        <ActivityIndicator size="large" />
-        <Text>Loading2…</Text>
-      </View>
-    );
+    return <Loading text="Checking auth..."/>;
   }
 
   return children;

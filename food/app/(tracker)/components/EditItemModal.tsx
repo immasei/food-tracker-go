@@ -1,9 +1,10 @@
+// (tracker)/components/EditItemModal.tsx
 import React from "react";
 import { Modal, Platform, Pressable, ScrollView, Switch, Text, TextInput, View, StyleSheet, KeyboardAvoidingView } from "react-native";
-import { Food } from "../types/food";
-import { shadow, palette } from "../styles";
-import { isExpired } from "../utils/dates";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Food } from "@/types/food";
+import { isExpired } from "@/utils/dates";
+import { shadow, palette } from "../styles";
 
 type Props = {
   visible: boolean;
@@ -144,26 +145,25 @@ export default function EditItemModal({
 }
 
 const styles = StyleSheet.create({
-    input: {
-        //flex: 1, // Fix input disappear problem on android devices
-        backgroundColor: "#FFF",
-        borderRadius: 14,
-        paddingHorizontal: 14,
-        paddingVertical: Platform.select({ ios: 12, android: 10, default: 11 }),
-        borderWidth: 1,
-        borderColor: palette.border,
-        color: palette.text,
-    },
-    modalBackdrop: { flex: 1, backgroundColor: palette.backdrop, justifyContent: "center", padding: 16 },
-    modalCard: { backgroundColor: "#FFFFFF", borderRadius: 16, borderWidth: 1, borderColor: palette.border, padding: 16, ...shadow },
-    modalTitle: { fontSize: 18, fontWeight: "800", color: palette.text, marginBottom: 8 },
-    modalBtns: {
-        flexDirection: "row",
-        justifyContent: "flex-end",
-        gap: 10,
-        marginTop: 16,
-    },
-    primaryBtn: {
+  input: {
+    backgroundColor: "#FFF",
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: Platform.select({ ios: 12, android: 10, default: 11 }),
+    borderWidth: 1,
+    borderColor: palette.border,
+    color: palette.text,
+  },
+  modalBackdrop: { flex: 1, backgroundColor: palette.backdrop, justifyContent: "center", padding: 16 },
+  modalCard: { backgroundColor: "#FFFFFF", borderRadius: 16, borderWidth: 1, borderColor: palette.border, padding: 16, ...shadow },
+  modalTitle: { fontSize: 18, fontWeight: "800", color: palette.text, marginBottom: 8 },
+  modalBtns: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 10,
+    marginTop: 16,
+  },
+  primaryBtn: {
     backgroundColor: palette.primary,
     borderRadius: 14,
     paddingHorizontal: 18,
@@ -179,7 +179,5 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   secondaryBtnText: { color: palette.text, fontWeight: "600" },
-    
-
-
+  
 });

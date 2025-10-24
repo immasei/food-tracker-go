@@ -1,15 +1,8 @@
+// (profile2)/utils/pushNotification.tsx
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
-import { arrayUnion } from "firebase/firestore";
-import { daysLeft, isExpired } from "../(tracker)/utils/dates"; 
 import { Platform } from 'react-native';
-import {
-  getFirestore, collection, getDocs, query, where,
-  updateDoc, doc, serverTimestamp, getDoc
-} from "firebase/firestore";
-import firebaseApp from "../../config/firebaseConfig";
-
-const db = getFirestore(firebaseApp);
+import { updateUser } from "@/services/userService";
 
 // ensure you set this in app.json/app.config (EAS project)
 const EAS_PROJECT_ID = "60c83ab0-87d2-482c-aeb7-4e7f845edfae";
@@ -38,10 +31,7 @@ export async function registerForPushAndSave(userDocId: string) {
     projectId: EAS_PROJECT_ID,
   })).data;
 
-  await updateDoc(doc(db, "users", userDocId), {
-    pushEnabled: true,
-    // expoPushTokens: arrayUnion(token),
-  });
+  await updateUser(userDocId, { pushEnabled: true });
 
   return token; // IMPORTANT: return token for immediate push
 }
