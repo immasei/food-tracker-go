@@ -56,7 +56,7 @@ export default function NotificationSettings() {
   // Auto start
   useEffect(() => {
     onRefresh();
-    }, [onRefresh]);
+  }, [onRefresh]);
 
 
 

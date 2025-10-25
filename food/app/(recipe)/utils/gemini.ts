@@ -28,7 +28,10 @@ export async function generateRecipe(ingredients: string): Promise<string> {
       config: config,
     });
 
-    return response.text;
+    // Avoid type check error
+    const text = response.text ?? "";
+    if (!text) throw new Error("No recipe text");
+    return text;
   } catch (error) {
     console.error("Gemini API call failed:", error);
     return "Failed to generate recipe. Please check your API key and internet connection.";
