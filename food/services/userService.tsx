@@ -31,6 +31,8 @@ export async function fetchUser(USER_ID: string) {
       phone_no: d.phone_no ?? null,
       location: (d.location ?? null) as ULocation | null,
       pushEnabled: Boolean(d.pushEnabled),
+      taste_pref: d.taste_pref ?? null,
+      allergy_info: d.allergy_info ?? null,
     };
     return u;
 }

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext, useCallback } from "react";
-import { Alert, FlatList, Pressable, SafeAreaView, Text, TextInput, View, StyleSheet, Platform, ScrollView, ActivityIndicator, Button } from "react-native";
+import { Alert, FlatList, Pressable, Text, TextInput, View, StyleSheet, Platform, ScrollView, ActivityIndicator, Button } from "react-native";
 import { useToast } from "@/components/Toast";
 import FoodCard from "../(tracker)/components/FoodCard";
 import EditItemModal from "../(tracker)/components/EditItemModal";
@@ -8,6 +8,8 @@ import { Food } from "@/types/food";
 import { NAMES_KEY, CATS_KEY, loadRecents } from "@/utils/recents";
 import { deleteFood, upsertFood } from "@/services/foodService";
 import { fetchFoods } from "../(tracker)/utils/hooks";
+import { User, UStats } from "@/types/user"
+import { fetchUser, fetchStats, updateUser } from "@/services/userService";
 import { generateRecipe } from "./utils/gemini";
 import Markdown from 'react-native-markdown-display';
 import { router } from "expo-router";
@@ -21,13 +23,32 @@ const RecipePage: React.FC = () => {
     const USER_ID = user?.uid ?? null;
 
     // Hardcoded ingredients (Keep this until fetchFoods is fixed)
-    const ingredients: Partial<Food>[] = [
+    const ingredients_hard: Partial<Food>[] = [
       { name: "Chicken Breast" }, 
       { name: "Broccoli" }, 
       { name: "Soy Sauce" }, 
       { name: "Rice" }
     ];
-    // const { filteredSorted: ingredients } = fetchFoods("", USER_ID); // <-- Use this line when fetching works
+    
+    // Store user's taste and allergy data
+    const [userData, setUserData] = useState<User | null>(null);
+
+    // --- Effect for Initial Ingredient Display/Check (Runs only once) ---
+    useEffect(() => {
+        // Load user's taste and allergy data
+        const loadUser = async () => {
+            try {
+                const userRes = await fetchUser(USER_ID);
+                setUserData(userRes);
+                if(!userData) return;
+            } catch (err) {
+                console.error("Failed to fetch user", err);
+            }
+        };
+        loadUser();
+    }, [USER_ID]);
+    
+    const { filteredSorted: ingredients } = fetchFoods("", USER_ID); // <-- Use this line when fetching works
 
     const [recipe, setRecipe] = useState<string>("");
     // 'loading' now only controls the state of the AI generation process
@@ -87,14 +108,14 @@ const RecipePage: React.FC = () => {
     if (!USER_ID) {
         // Show loading/login message if not authenticated
         return (
-            <SafeAreaView style={styles.container}>
+            <View style={styles.container}>
                 <Loading text="Please login to generate a recipe."/>
-            </SafeAreaView>
+            </View>
         );
     }
 
     return (
-        <SafeAreaView style={styles.container}>
+        <View style={styles.container}>
             <View style={styles.header}>
                 <Text style={styles.title}>AI Recipe Generator 🧑‍🍳</Text>
                 <Button title="Back to List" onPress={onClose} />
@@ -145,7 +166,7 @@ const RecipePage: React.FC = () => {
                     </Text>
                 </View>
             )}
-        </SafeAreaView>
+        </View>
     );
 };
 

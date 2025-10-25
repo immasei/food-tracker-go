@@ -6,6 +6,8 @@ export type User = {
   phone_no?: string | null;
   location?: ULocation | null;
   pushEnabled?: boolean; 
+  taste_pref?: string | null;
+  allergy_info?: string | null;
 };
 
 export type ULocation = {
