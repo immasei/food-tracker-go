@@ -1,12 +1,7 @@
 import React, { useEffect, useState, useContext, useCallback } from "react";
 import { Alert, FlatList, Pressable, Text, TextInput, View, StyleSheet, ScrollView, ActivityIndicator, Button } from "react-native";
-import { useToast } from "@/components/Toast"; 
-import FoodCard from "../(tracker)/components/FoodCard"; 
-import EditItemModal from "../(tracker)/components/EditItemModal"; 
 import { shadow, palette } from "./styles"; 
 import { Food } from "@/types/food";
-import { NAMES_KEY, CATS_KEY, loadRecents } from "@/utils/recents"; 
-import { deleteFood, upsertFood } from "@/services/foodService"; 
 import { fetchFoods } from "../(tracker)/utils/hooks";
 import { User, UStats } from "@/types/user" 
 import { fetchUser, fetchStats, updateUser } from "@/services/userService"; 
@@ -16,12 +11,8 @@ import { router } from "expo-router";
 import { AuthContext } from "@/contexts/AuthContext";
 import Loading from "@/components/Loading"; 
 import { MaterialIcons } from '@expo/vector-icons';
-import { daysLeft, isExpired } from "@/utils/dates"; // isExpired is key for this feature
+import { daysLeft, isExpired } from "@/utils/dates";
 
-
-// --- Expiry Status Logic ---
-
-// choose badge style based on expiry (null/empty = never expires)
 const statusStyle = (iso: string | null | undefined) => {
     if (!iso || !iso.trim?.())
       return [localStyles.badge, localStyles.badgeNone];
@@ -36,14 +27,11 @@ const statusStyle = (iso: string | null | undefined) => {
     return [localStyles.badge, localStyles.badgeOk];
 };
 
-// text for badge
 const statusText = (iso: string | null | undefined) => {
     if (!iso || !iso.trim?.()) return "No expiry";
     return isExpired(iso) ? "Expired" : `${daysLeft(iso)}d left`;
 };
 
-
-// --- Ingredient Selection Item Component ---
 interface IngredientItemProps {
     food: Partial<Food> & { expiryDate?: string }; 
     isSelected: boolean;
@@ -72,8 +60,6 @@ const IngredientItem: React.FC<IngredientItemProps> = ({ food, isSelected, onTog
     </Pressable>
 );
 
-// --- Main RecipePage Component ---
-
 const RecipePage: React.FC = () => {
     const { user } = useContext(AuthContext);
     const USER_ID = user?.uid ?? null;
@@ -96,27 +82,21 @@ const RecipePage: React.FC = () => {
         setLoading(false);          
     };
 
-    // 🆕 NEW FUNCTION: Select all ingredients
     const handleSelectAll = useCallback(() => {
         setSelectedIngredients(allIngredients);
     }, [allIngredients]);
 
-    // 🆕 NEW FUNCTION: Deselect all ingredients
     const handleUntickAll = useCallback(() => {
         setSelectedIngredients([]);
     }, []);
 
-    // 🔑 NEW FUNCTION: Exclude all expired items
     const handleExcludeExpired = useCallback(() => {
         if (allIngredients.length === 0) return;
 
-        // Filter out expired items from the currently selected list
         const nonExpired = selectedIngredients.filter(food => {
-            // isExpired returns true if the date is in the past or if the date is null/undefined.
-            // We want to keep items that are NOT expired, OR items with no expiry date set.
             const date = food.expiryDate;
             if (!date || !date.trim()) {
-                return true; // Keep items with no expiry date
+                return true;
             }
             return !isExpired(date);
         });
@@ -129,9 +109,7 @@ const RecipePage: React.FC = () => {
         setSelectedIngredients(nonExpired);
         Alert.alert("Expired Items Excluded", `${selectedIngredients.length - nonExpired.length} expired item(s) removed from selection.`);
     }, [selectedIngredients]);
-    // NOTE: We depend on selectedIngredients to only remove expired items from the CURRENT SELECTION.
-    
-    // --- Effect for Initial Data Loading ---
+
     useEffect(() => {
         const loadUser = async () => {
             try {
@@ -144,14 +122,12 @@ const RecipePage: React.FC = () => {
         loadUser();
     }, [USER_ID]);
 
-    // --- Effect to set initial selected ingredients (all available) ---
     useEffect(() => {
         if (allIngredients.length > 0 && selectedIngredients.length === 0) {
             setSelectedIngredients(allIngredients);
         }
     }, [allIngredients]);
-    
-    // --- Function to toggle the selection status of an ingredient ---
+
     const toggleIngredientSelection = useCallback((food: Partial<Food>) => {
         setSelectedIngredients(prevSelected => {
             const isSelected = prevSelected.some(f => f.name === food.name);
@@ -163,7 +139,6 @@ const RecipePage: React.FC = () => {
         });
     }, []);
 
-    // --- Function to Handle Recipe Generation ---
     const handleGenerateRecipe = useCallback(async () => {
         if (!USER_ID) {
             Alert.alert("Authentication Required", "Please log in to generate a recipe.");
@@ -200,9 +175,6 @@ const RecipePage: React.FC = () => {
         }
     }, [USER_ID, selectedIngredients, userData]);
 
-
-    // --- Render Logic ---
-
     if (!USER_ID) {
         return (
             <View style={localStyles.container}>
@@ -235,7 +207,6 @@ const RecipePage: React.FC = () => {
         );
     }
 
-    // --- Recipe Generation View ---
     return (
         <View style={localStyles.container}>
             <View style={localStyles.header}>
@@ -331,8 +302,6 @@ const RecipePage: React.FC = () => {
     );
 };
 
-// --- Styles (Updated to include Exclude Expired Styles) ---
-
 const localStyles = StyleSheet.create({
     container: { flex: 1, backgroundColor: "#F7F7F7" },
     header: {
@@ -351,7 +320,6 @@ const localStyles = StyleSheet.create({
     promptText: { marginHorizontal: 20, marginBottom: 20, fontSize: 14, fontStyle: 'italic', color: '#555', textAlign: 'center' },
     emptyText: { fontSize: 16, color: '#DB4437', textAlign: 'center' },
     
-    // Button Styles
     buttonRow: {
         padding: 16,
         backgroundColor: '#fff',
@@ -360,7 +328,7 @@ const localStyles = StyleSheet.create({
         alignItems: 'center',
     },
     generateBtn: {
-        backgroundColor: '#4285F4', // Google Blue
+        backgroundColor: '#4285F4',
         paddingVertical: 12,
         paddingHorizontal: 25,
         borderRadius: 25,
@@ -369,7 +337,7 @@ const localStyles = StyleSheet.create({
         ...shadow,
     },
     disabledBtn: {
-        backgroundColor: '#A9A9A9', // Grey when disabled
+        backgroundColor: '#A9A9A9',
     },
     generateBtnText: {
         color: '#fff',
@@ -379,8 +347,6 @@ const localStyles = StyleSheet.create({
     activityIndicator: {
         marginLeft: 10,
     },
-
-    // SELECTION HEADER STYLES
     selectionHeader: {
         padding: 16,
         backgroundColor: '#EFEFEF',
@@ -392,10 +358,9 @@ const localStyles = StyleSheet.create({
         fontWeight: 'bold',
         marginBottom: 8, 
     },
-    // TICK BUTTONS STYLES
     tickButtonsContainer: {
         flexDirection: 'row',
-        flexWrap: 'wrap', // Allow buttons to wrap to next line if space is tight
+        flexWrap: 'wrap',
         gap: 10,
     },
     tickButton: {
@@ -404,21 +369,19 @@ const localStyles = StyleSheet.create({
         borderRadius: 8,
     },
     tickAllButton: {
-        backgroundColor: '#34A853', // Green
+        backgroundColor: '#34A853',
     },
     untickAllButton: {
-        backgroundColor: '#DB4437', // Red
+        backgroundColor: '#DB4437',
     },
-    // 🔑 NEW STYLE: Exclude Expired Button
     excludeExpiredButton: {
-        backgroundColor: '#F7A34B', // Orange/Amber
+        backgroundColor: '#F7A34B',
     },
     tickButtonText: {
         color: '#fff',
         fontWeight: '700',
         fontSize: 14,
     },
-    // END NEW STYLES
 
     listContent: {
         paddingBottom: 80, 
@@ -461,7 +424,6 @@ const localStyles = StyleSheet.create({
         color: '#555',
     },
 
-    // BADGE STYLES
     badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999, borderWidth: 1 },
     badgeText: { fontSize: 10, fontWeight: "700", color: palette.text }, 
     badgeExpired: { backgroundColor: "#FEE2E2", borderColor: "#FECACA" },
