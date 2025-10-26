@@ -1,64 +1,98 @@
 import React, { useEffect, useState, useContext, useCallback } from "react";
-import { Alert, FlatList, Pressable, Text, TextInput, View, StyleSheet, Platform, ScrollView, ActivityIndicator, Button } from "react-native";
-import { useToast } from "@/components/Toast";
-import FoodCard from "../(tracker)/components/FoodCard";
-import EditItemModal from "../(tracker)/components/EditItemModal";
-import { shadow, palette } from "./styles";
+import { Alert, FlatList, Pressable, Text, TextInput, View, StyleSheet, ScrollView, ActivityIndicator, Button } from "react-native";
+import { useToast } from "@/components/Toast"; 
+import FoodCard from "../(tracker)/components/FoodCard"; 
+import EditItemModal from "../(tracker)/components/EditItemModal"; 
+import { shadow, palette } from "./styles"; 
 import { Food } from "@/types/food";
-import { NAMES_KEY, CATS_KEY, loadRecents } from "@/utils/recents";
-import { deleteFood, upsertFood } from "@/services/foodService";
+import { NAMES_KEY, CATS_KEY, loadRecents } from "@/utils/recents"; 
+import { deleteFood, upsertFood } from "@/services/foodService"; 
 import { fetchFoods } from "../(tracker)/utils/hooks";
-import { User, UStats } from "@/types/user"
-import { fetchUser, fetchStats, updateUser } from "@/services/userService";
+import { User, UStats } from "@/types/user" 
+import { fetchUser, fetchStats, updateUser } from "@/services/userService"; 
 import { generateRecipe } from "./utils/gemini";
 import Markdown from 'react-native-markdown-display';
 import { router } from "expo-router";
 import { AuthContext } from "@/contexts/AuthContext";
 import Loading from "@/components/Loading"; 
+import { MaterialIcons } from '@expo/vector-icons';
 
+
+// --- New Component for Ingredient Selection Item ---
+interface IngredientItemProps {
+    food: Partial<Food>;
+    isSelected: boolean;
+    onToggle: (food: Partial<Food>) => void;
+}
+
+const IngredientItem: React.FC<IngredientItemProps> = ({ food, isSelected, onToggle }) => (
+    <Pressable style={styles.ingredientItem} onPress={() => onToggle(food)}>
+        <Text style={styles.ingredientText}>{food.name}</Text>
+        <MaterialIcons 
+            name={isSelected ? "check-box" : "check-box-outline-blank"} 
+            size={24} 
+            color={isSelected ? "#4285F4" : "#A9A9A9"} 
+        />
+    </Pressable>
+);
+
+// --- Main RecipePage Component ---
 
 const RecipePage: React.FC = () => {
-    // --- Authentication and Data Fetching Integration ---
     const { user } = useContext(AuthContext);
     const USER_ID = user?.uid ?? null;
-
-    // Hardcoded ingredients (Keep this until fetchFoods is fixed)
-    const ingredients_hard: Partial<Food>[] = [
-      { name: "Chicken Breast" }, 
-      { name: "Broccoli" }, 
-      { name: "Soy Sauce" }, 
-      { name: "Rice" }
-    ];
     
-    // Store user's taste and allergy data
     const [userData, setUserData] = useState<User | null>(null);
 
-    // --- Effect for Initial Ingredient Display/Check (Runs only once) ---
+    const { filteredSorted: allIngredients, isLoading: ingredientsLoading } = fetchFoods("", USER_ID); 
+    
+    const [selectedIngredients, setSelectedIngredients] = useState<Partial<Food>[]>([]);
+
+    const [recipe, setRecipe] = useState<string>("");
+    const [loading, setLoading] = useState(false);
+    const [ingredientNames, setIngredientNames] = useState<string>("");
+    
+    // 🔑 THE CRITICAL STATE CHANGE: This controls which view is displayed
+    const [recipeGenerated, setRecipeGenerated] = useState(false); 
+
+    // 🔄 MODIFIED: Now, instead of closing the screen, it resets the recipe view.
+    const resetToSelection = () => {
+        setRecipeGenerated(false); // Go back to the ingredient selection view
+        setRecipe("");              // Clear the displayed recipe
+        setLoading(false);          // Ensure loading is false
+    };
+
+    // --- Effect for Initial Data Loading ---
     useEffect(() => {
-        // Load user's taste and allergy data
         const loadUser = async () => {
             try {
                 const userRes = await fetchUser(USER_ID);
                 setUserData(userRes);
-                if(!userData) return;
             } catch (err) {
                 console.error("Failed to fetch user", err);
             }
         };
         loadUser();
     }, [USER_ID]);
+
+    // --- Effect to set initial selected ingredients (all available) ---
+    useEffect(() => {
+        if (allIngredients.length > 0 && selectedIngredients.length === 0) {
+            setSelectedIngredients(allIngredients);
+        }
+    }, [allIngredients]);
     
-    const { filteredSorted: ingredients } = fetchFoods("", USER_ID); // <-- Use this line when fetching works
-
-    const [recipe, setRecipe] = useState<string>("");
-    // 'loading' now only controls the state of the AI generation process
-    const [loading, setLoading] = useState(false); // Start as false
-    const [ingredientNames, setIngredientNames] = useState<string>("");
-    const [recipeGenerated, setRecipeGenerated] = useState(false); 
-
-    const onClose = () => {
-        router.back();
-    };
+    // --- Function to toggle the selection status of an ingredient ---
+    const toggleIngredientSelection = useCallback((food: Partial<Food>) => {
+        setSelectedIngredients(prevSelected => {
+            const isSelected = prevSelected.some(f => f.name === food.name);
+            if (isSelected) {
+                return prevSelected.filter(f => f.name !== food.name);
+            } else {
+                return [...prevSelected, food];
+            }
+        });
+    }, []);
 
     // --- Function to Handle Recipe Generation ---
     const handleGenerateRecipe = useCallback(async () => {
@@ -67,22 +101,27 @@ const RecipePage: React.FC = () => {
             return;
         }
 
-        if (ingredients.length === 0) {
-            Alert.alert("No Ingredients", "Your food list is empty. Add items to generate a recipe.");
+        if (selectedIngredients.length === 0) {
+            Alert.alert("No Ingredients Selected", "Please select at least one ingredient to generate a recipe.");
             return;
         }
 
-        const names = ingredients.map(f => f.name).join(', ');
+        const names = selectedIngredients.map(f => f.name).join(', ');
         setIngredientNames(names);
         
         setLoading(true);
-        setRecipeGenerated(false); // Reset before new generation
-        setRecipe(""); // Clear old recipe
+        setRecipeGenerated(false); 
+        setRecipe(""); 
         
         try {
-            const generatedRecipe = await generateRecipe(names);
+            const dietPref = userData?.dietaryPreference ? `, based on a ${userData.dietaryPreference} diet` : '';
+            const allergies = userData?.allergies ? `, avoiding ${userData.allergies.join(', ')}` : '';
+
+            const prompt = `Generate a recipe using ONLY these ingredients: ${names}${dietPref}${allergies}. Provide the recipe title, ingredients list, and instructions in Markdown format.`;
+            
+            const generatedRecipe = await generateRecipe(prompt); 
             setRecipe(generatedRecipe);
-            setRecipeGenerated(true);
+            setRecipeGenerated(true); // Switches to the recipe display view
         } catch (e) {
             console.error("Recipe Generation Error:", e);
             Alert.alert("Recipe Error", "Could not generate recipe.");
@@ -90,88 +129,116 @@ const RecipePage: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    }, [USER_ID, ingredients]);
+    }, [USER_ID, selectedIngredients, userData]);
 
 
-    // --- Effect for Initial Ingredient Display/Check (Runs only once) ---
-    useEffect(() => {
-        if (USER_ID && ingredients.length > 0) {
-            const names = ingredients.map(f => f.name).join(', ');
-            setIngredientNames(names);
-        } else if (USER_ID) {
-            setIngredientNames("None found in your food list.");
-        }
-        // NOTE: The previous useEffect logic that called fetchRecipe is now moved to handleGenerateRecipe
-    }, [USER_ID]); 
-    
     // --- Render Logic ---
+
     if (!USER_ID) {
-        // Show loading/login message if not authenticated
         return (
             <View style={styles.container}>
                 <Loading text="Please login to generate a recipe."/>
             </View>
         );
     }
-
-    return (
-        <View style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.title}>AI Recipe Generator 🧑‍🍳</Text>
-                <Button title="Back to List" onPress={onClose} />
+    
+    if (ingredientsLoading) {
+        return (
+            <View style={styles.container}>
+                <Loading text="Loading your ingredients..."/>
             </View>
-
-            <View style={styles.buttonRow}>
-                <Pressable onPress={handleGenerateRecipe} style={styles.generateBtn} disabled={loading}>
-                    <Text style={styles.generateBtnText}>
-                        {loading ? 'Generating...' : 'Generate Recipe'}
-                    </Text>
-                    {loading && <ActivityIndicator size="small" color="#fff" style={styles.activityIndicator} />}
-                </Pressable>
-            </View>
-            
-            {loading && (
-                <View style={styles.centered}>
-                    <ActivityIndicator size="large" color="#4285F4" />
-                    <Text style={styles.loadingText}>Thinking up a delicious recipe...</Text>
+        );
+    }
+    
+    if (allIngredients.length === 0) {
+        return (
+            <View style={styles.container}>
+                <View style={styles.header}>
+                    <Text style={styles.title}>AI Recipe Generator</Text>
+                    {/* Only close the page if there's nothing to select */}
+                    <Button title="Close" onPress={() => router.back()} /> 
                 </View>
-            )}
-
-            {!loading && recipeGenerated && (
-                <ScrollView contentContainerStyle={styles.content}>
-                    <Text style={styles.promptText}>
-                        **Ingredients:** {ingredientNames}
-                    </Text>
-                    <Markdown style={markdownStyles}>
-                        {recipe}
-                    </Markdown>
-                </ScrollView>
-            )}
-
-            {!loading && !recipeGenerated && ingredients.length === 0 && (
                 <View style={styles.centered}>
                     <Text style={styles.emptyText}>
                         Your food list is empty. Please add items to your tracker before generating a recipe.
                     </Text>
                 </View>
-            )}
+            </View>
+        );
+    }
 
-            {!loading && !recipeGenerated && ingredients.length > 0 && (
+    // --- Recipe Generation View ---
+    return (
+        <View style={styles.container}>
+            <View style={styles.header}>
+                <Text style={styles.title}>AI Recipe Generator</Text>
+                {/* 🔑 MODIFIED: Use the resetToSelection function when recipe is visible, otherwise close the screen */}
+                <Button 
+                    title={recipeGenerated ? "Back to Selection" : "Close Page"} 
+                    onPress={recipeGenerated ? resetToSelection : () => router.back()} 
+                />
+            </View>
+
+            {/* Selection/Generation Area */}
+            <View style={styles.buttonRow}>
+                <Pressable 
+                    onPress={handleGenerateRecipe} 
+                    style={[styles.generateBtn, selectedIngredients.length === 0 && styles.disabledBtn]} 
+                    disabled={loading || selectedIngredients.length === 0 || recipeGenerated}
+                >
+                    <Text style={styles.generateBtnText}>
+                        {loading ? 'Generating...' : `Generate Recipe (${selectedIngredients.length} items)`}
+                    </Text>
+                    {loading && <ActivityIndicator size="small" color="#fff" style={styles.activityIndicator} />}
+                </Pressable>
+            </View>
+            
+            {loading ? (
+                // --- Loading State for AI Generation ---
                 <View style={styles.centered}>
-                    <Text style={styles.welcomeText}>
-                        Ready to cook? Press "Generate Recipe" to get started!
-                    </Text>
+                    <ActivityIndicator size="large" color="#4285F4" />
+                    <Text style={styles.loadingText}>Thinking up a delicious recipe...</Text>
+                    <Text style={styles.promptText}>Using: {ingredientNames}</Text>
+                </View>
+            ) : recipeGenerated ? (
+                // --- Recipe Display State ---
+                <ScrollView contentContainerStyle={styles.content}>
                     <Text style={styles.promptText}>
-                        **Ingredients Found:** {ingredientNames}
+                        **Ingredients Used:** {ingredientNames}
                     </Text>
+                    <Markdown style={markdownStyles}>
+                        {recipe}
+                    </Markdown>
+                </ScrollView>
+            ) : (
+                // --- Ingredient Selection State ---
+                <View style={{ flex: 1 }}>
+                    <Text style={styles.selectionTitle}>Select Ingredients to Use:</Text>
+                    <FlatList
+                        data={allIngredients}
+                        keyExtractor={(item, index) => item.name + index}
+                        renderItem={({ item }) => (
+                            <IngredientItem 
+                                food={item} 
+                                isSelected={selectedIngredients.some(f => f.name === item.name)}
+                                onToggle={toggleIngredientSelection}
+                            />
+                        )}
+                        contentContainerStyle={styles.listContent}
+                    />
+                    <View style={styles.footerInfo}>
+                        <Text style={styles.footerText}>
+                            {selectedIngredients.length} of {allIngredients.length} ingredients selected.
+                        </Text>
+                    </View>
                 </View>
             )}
         </View>
     );
 };
 
-// --- Styles ---
-
+// --- Styles (Unchanged) ---
+// ... (Keep your original styles here)
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: "#F7F7F7" },
     header: {
@@ -187,11 +254,10 @@ const styles = StyleSheet.create({
     content: { padding: 16 },
     centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
     loadingText: { marginTop: 10, fontSize: 16, color: "#4285F4" },
-    promptText: { marginBottom: 20, fontSize: 14, fontStyle: 'italic', color: '#555', textAlign: 'center' },
-    welcomeText: { fontSize: 18, marginBottom: 20, fontWeight: '600', color: '#555', textAlign: 'center' },
+    promptText: { marginHorizontal: 20, marginBottom: 20, fontSize: 14, fontStyle: 'italic', color: '#555', textAlign: 'center' },
     emptyText: { fontSize: 16, color: '#DB4437', textAlign: 'center' },
     
-    // New Styles for the Button
+    // Button Styles
     buttonRow: {
         padding: 16,
         backgroundColor: '#fff',
@@ -208,6 +274,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         ...shadow,
     },
+    disabledBtn: {
+        backgroundColor: '#A9A9A9', // Grey when disabled
+    },
     generateBtnText: {
         color: '#fff',
         fontWeight: 'bold',
@@ -215,6 +284,45 @@ const styles = StyleSheet.create({
     },
     activityIndicator: {
         marginLeft: 10,
+    },
+
+    // New Styles for Selection
+    selectionTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        padding: 16,
+        backgroundColor: '#EFEFEF',
+        borderBottomWidth: 1,
+        borderBottomColor: '#DDD',
+    },
+    listContent: {
+        paddingBottom: 80, 
+    },
+    ingredientItem: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: 15,
+        paddingHorizontal: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#EEE',
+        backgroundColor: '#fff',
+    },
+    ingredientText: {
+        fontSize: 16,
+        color: '#333',
+        flex: 1,
+    },
+    footerInfo: {
+        padding: 10,
+        backgroundColor: '#fff',
+        borderTopWidth: 1,
+        borderTopColor: '#ddd',
+        alignItems: 'center',
+    },
+    footerText: {
+        fontSize: 14,
+        color: '#555',
     }
   });
   
@@ -225,5 +333,6 @@ const styles = StyleSheet.create({
       list_item: { marginBottom: 4 },
       strong: { fontWeight: 'bold' }
   });
+
 
 export default RecipePage;
