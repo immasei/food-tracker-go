@@ -1,12 +1,7 @@
 import React, { useEffect, useState, useContext, useCallback } from "react";
 import { Alert, FlatList, Pressable, Text, TextInput, View, StyleSheet, ScrollView, ActivityIndicator, Button } from "react-native";
-import { useToast } from "@/components/Toast"; 
-import FoodCard from "../(tracker)/components/FoodCard"; 
-import EditItemModal from "../(tracker)/components/EditItemModal"; 
 import { shadow, palette } from "./styles"; 
 import { Food } from "@/types/food";
-import { NAMES_KEY, CATS_KEY, loadRecents } from "@/utils/recents"; 
-import { deleteFood, upsertFood } from "@/services/foodService"; 
 import { fetchFoods } from "../(tracker)/utils/hooks";
 import { User, UStats } from "@/types/user" 
 import { fetchUser, fetchStats, updateUser } from "@/services/userService"; 
@@ -16,18 +11,47 @@ import { router } from "expo-router";
 import { AuthContext } from "@/contexts/AuthContext";
 import Loading from "@/components/Loading"; 
 import { MaterialIcons } from '@expo/vector-icons';
+import { daysLeft, isExpired } from "@/utils/dates";
 
+const statusStyle = (iso: string | null | undefined) => {
+    if (!iso || !iso.trim?.())
+      return [localStyles.badge, localStyles.badgeNone];
+  
+    if (isExpired(iso)) 
+      return [localStyles.badge, localStyles.badgeExpired];
+      
+    const d = daysLeft(iso);
+    if (Number.isFinite(d) && d <= 3) 
+      return [localStyles.badge, localStyles.badgeSoon];
+      
+    return [localStyles.badge, localStyles.badgeOk];
+};
 
-// --- New Component for Ingredient Selection Item ---
+const statusText = (iso: string | null | undefined) => {
+    if (!iso || !iso.trim?.()) return "No expiry";
+    return isExpired(iso) ? "Expired" : `${daysLeft(iso)}d left`;
+};
+
 interface IngredientItemProps {
-    food: Partial<Food>;
+    food: Partial<Food> & { expiryDate?: string }; 
     isSelected: boolean;
     onToggle: (food: Partial<Food>) => void;
 }
 
 const IngredientItem: React.FC<IngredientItemProps> = ({ food, isSelected, onToggle }) => (
-    <Pressable style={styles.ingredientItem} onPress={() => onToggle(food)}>
-        <Text style={styles.ingredientText}>{food.name}</Text>
+    <Pressable style={localStyles.ingredientItem} onPress={() => onToggle(food)}>
+        <View style={localStyles.ingredientInfo}>
+            <Text style={localStyles.ingredientText}>{food.name}</Text>
+            
+            <View style={localStyles.expiryBadgeContainer}>
+                {food.expiryDate !== undefined && food.expiryDate !== null && (
+                    <View style={statusStyle(food.expiryDate)}>
+                        <Text style={localStyles.badgeText}>{statusText(food.expiryDate)}</Text>
+                    </View>
+                )}
+            </View>
+        </View>
+
         <MaterialIcons 
             name={isSelected ? "check-box" : "check-box-outline-blank"} 
             size={24} 
@@ -35,8 +59,6 @@ const IngredientItem: React.FC<IngredientItemProps> = ({ food, isSelected, onTog
         />
     </Pressable>
 );
-
-// --- Main RecipePage Component ---
 
 const RecipePage: React.FC = () => {
     const { user } = useContext(AuthContext);
@@ -52,17 +74,42 @@ const RecipePage: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [ingredientNames, setIngredientNames] = useState<string>("");
     
-    // 🔑 THE CRITICAL STATE CHANGE: This controls which view is displayed
     const [recipeGenerated, setRecipeGenerated] = useState(false); 
 
-    // 🔄 MODIFIED: Now, instead of closing the screen, it resets the recipe view.
     const resetToSelection = () => {
-        setRecipeGenerated(false); // Go back to the ingredient selection view
-        setRecipe("");              // Clear the displayed recipe
-        setLoading(false);          // Ensure loading is false
+        setRecipeGenerated(false); 
+        setRecipe("");              
+        setLoading(false);          
     };
 
-    // --- Effect for Initial Data Loading ---
+    const handleSelectAll = useCallback(() => {
+        setSelectedIngredients(allIngredients);
+    }, [allIngredients]);
+
+    const handleUntickAll = useCallback(() => {
+        setSelectedIngredients([]);
+    }, []);
+
+    const handleExcludeExpired = useCallback(() => {
+        if (allIngredients.length === 0) return;
+
+        const nonExpired = selectedIngredients.filter(food => {
+            const date = food.expiryDate;
+            if (!date || !date.trim()) {
+                return true;
+            }
+            return !isExpired(date);
+        });
+
+        if (nonExpired.length === selectedIngredients.length) {
+             Alert.alert("No change needed", "No expired items were found in your current selection.");
+             return;
+        }
+
+        setSelectedIngredients(nonExpired);
+        Alert.alert("Expired Items Excluded", `${selectedIngredients.length - nonExpired.length} expired item(s) removed from selection.`);
+    }, [selectedIngredients]);
+
     useEffect(() => {
         const loadUser = async () => {
             try {
@@ -75,14 +122,12 @@ const RecipePage: React.FC = () => {
         loadUser();
     }, [USER_ID]);
 
-    // --- Effect to set initial selected ingredients (all available) ---
     useEffect(() => {
         if (allIngredients.length > 0 && selectedIngredients.length === 0) {
             setSelectedIngredients(allIngredients);
         }
     }, [allIngredients]);
-    
-    // --- Function to toggle the selection status of an ingredient ---
+
     const toggleIngredientSelection = useCallback((food: Partial<Food>) => {
         setSelectedIngredients(prevSelected => {
             const isSelected = prevSelected.some(f => f.name === food.name);
@@ -94,7 +139,6 @@ const RecipePage: React.FC = () => {
         });
     }, []);
 
-    // --- Function to Handle Recipe Generation ---
     const handleGenerateRecipe = useCallback(async () => {
         if (!USER_ID) {
             Alert.alert("Authentication Required", "Please log in to generate a recipe.");
@@ -121,7 +165,7 @@ const RecipePage: React.FC = () => {
             
             const generatedRecipe = await generateRecipe(prompt); 
             setRecipe(generatedRecipe);
-            setRecipeGenerated(true); // Switches to the recipe display view
+            setRecipeGenerated(true); 
         } catch (e) {
             console.error("Recipe Generation Error:", e);
             Alert.alert("Recipe Error", "Could not generate recipe.");
@@ -131,12 +175,9 @@ const RecipePage: React.FC = () => {
         }
     }, [USER_ID, selectedIngredients, userData]);
 
-
-    // --- Render Logic ---
-
     if (!USER_ID) {
         return (
-            <View style={styles.container}>
+            <View style={localStyles.container}>
                 <Loading text="Please login to generate a recipe."/>
             </View>
         );
@@ -144,7 +185,7 @@ const RecipePage: React.FC = () => {
     
     if (ingredientsLoading) {
         return (
-            <View style={styles.container}>
+            <View style={localStyles.container}>
                 <Loading text="Loading your ingredients..."/>
             </View>
         );
@@ -152,14 +193,13 @@ const RecipePage: React.FC = () => {
     
     if (allIngredients.length === 0) {
         return (
-            <View style={styles.container}>
-                <View style={styles.header}>
-                    <Text style={styles.title}>AI Recipe Generator</Text>
-                    {/* Only close the page if there's nothing to select */}
+            <View style={localStyles.container}>
+                <View style={localStyles.header}>
+                    <Text style={localStyles.title}>AI Recipe Generator</Text>
                     <Button title="Close" onPress={() => router.back()} /> 
                 </View>
-                <View style={styles.centered}>
-                    <Text style={styles.emptyText}>
+                <View style={localStyles.centered}>
+                    <Text style={localStyles.emptyText}>
                         Your food list is empty. Please add items to your tracker before generating a recipe.
                     </Text>
                 </View>
@@ -167,12 +207,10 @@ const RecipePage: React.FC = () => {
         );
     }
 
-    // --- Recipe Generation View ---
     return (
-        <View style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.title}>AI Recipe Generator</Text>
-                {/* 🔑 MODIFIED: Use the resetToSelection function when recipe is visible, otherwise close the screen */}
+        <View style={localStyles.container}>
+            <View style={localStyles.header}>
+                <Text style={localStyles.title}>AI Recipe Generator</Text>
                 <Button 
                     title={recipeGenerated ? "Back to Selection" : "Close Page"} 
                     onPress={recipeGenerated ? resetToSelection : () => router.back()} 
@@ -180,30 +218,30 @@ const RecipePage: React.FC = () => {
             </View>
 
             {/* Selection/Generation Area */}
-            <View style={styles.buttonRow}>
+            <View style={localStyles.buttonRow}>
                 <Pressable 
                     onPress={handleGenerateRecipe} 
-                    style={[styles.generateBtn, selectedIngredients.length === 0 && styles.disabledBtn]} 
+                    style={[localStyles.generateBtn, selectedIngredients.length === 0 && localStyles.disabledBtn]} 
                     disabled={loading || selectedIngredients.length === 0 || recipeGenerated}
                 >
-                    <Text style={styles.generateBtnText}>
+                    <Text style={localStyles.generateBtnText}>
                         {loading ? 'Generating...' : `Generate Recipe (${selectedIngredients.length} items)`}
                     </Text>
-                    {loading && <ActivityIndicator size="small" color="#fff" style={styles.activityIndicator} />}
+                    {loading && <ActivityIndicator size="small" color="#fff" style={localStyles.activityIndicator} />}
                 </Pressable>
             </View>
             
             {loading ? (
                 // --- Loading State for AI Generation ---
-                <View style={styles.centered}>
+                <View style={localStyles.centered}>
                     <ActivityIndicator size="large" color="#4285F4" />
-                    <Text style={styles.loadingText}>Thinking up a delicious recipe...</Text>
-                    <Text style={styles.promptText}>Using: {ingredientNames}</Text>
+                    <Text style={localStyles.loadingText}>Thinking up a delicious recipe...</Text>
+                    <Text style={localStyles.promptText}>Using: {ingredientNames}</Text>
                 </View>
             ) : recipeGenerated ? (
                 // --- Recipe Display State ---
-                <ScrollView contentContainerStyle={styles.content}>
-                    <Text style={styles.promptText}>
+                <ScrollView contentContainerStyle={localStyles.content}>
+                    <Text style={localStyles.promptText}>
                         **Ingredients Used:** {ingredientNames}
                     </Text>
                     <Markdown style={markdownStyles}>
@@ -213,7 +251,34 @@ const RecipePage: React.FC = () => {
             ) : (
                 // --- Ingredient Selection State ---
                 <View style={{ flex: 1 }}>
-                    <Text style={styles.selectionTitle}>Select Ingredients to Use:</Text>
+                    <View style={localStyles.selectionHeader}>
+                        <Text style={localStyles.selectionTitle}>Select Ingredients to Use:</Text>
+                        
+                        <View style={localStyles.tickButtonsContainer}>
+                            <Pressable 
+                                onPress={handleSelectAll} 
+                                style={[localStyles.tickButton, localStyles.tickAllButton]}
+                                disabled={allIngredients.length === 0}
+                            >
+                                <Text style={localStyles.tickButtonText}>Tick All</Text>
+                            </Pressable>
+                            <Pressable 
+                                onPress={handleUntickAll} 
+                                style={[localStyles.tickButton, localStyles.untickAllButton]}
+                                disabled={selectedIngredients.length === 0}
+                            >
+                                <Text style={localStyles.tickButtonText}>Untick All</Text>
+                            </Pressable>
+                            {/* 🔑 ADDED EXCLUDE EXPIRED BUTTON */}
+                            <Pressable 
+                                onPress={handleExcludeExpired} 
+                                style={[localStyles.tickButton, localStyles.excludeExpiredButton]}
+                                disabled={selectedIngredients.length === 0}
+                            >
+                                <Text style={localStyles.tickButtonText}>Exclude Expired</Text>
+                            </Pressable>
+                        </View>
+                    </View>
                     <FlatList
                         data={allIngredients}
                         keyExtractor={(item, index) => item.name + index}
@@ -224,10 +289,10 @@ const RecipePage: React.FC = () => {
                                 onToggle={toggleIngredientSelection}
                             />
                         )}
-                        contentContainerStyle={styles.listContent}
+                        contentContainerStyle={localStyles.listContent}
                     />
-                    <View style={styles.footerInfo}>
-                        <Text style={styles.footerText}>
+                    <View style={localStyles.footerInfo}>
+                        <Text style={localStyles.footerText}>
                             {selectedIngredients.length} of {allIngredients.length} ingredients selected.
                         </Text>
                     </View>
@@ -237,9 +302,7 @@ const RecipePage: React.FC = () => {
     );
 };
 
-// --- Styles (Unchanged) ---
-// ... (Keep your original styles here)
-const styles = StyleSheet.create({
+const localStyles = StyleSheet.create({
     container: { flex: 1, backgroundColor: "#F7F7F7" },
     header: {
       padding: 16,
@@ -257,7 +320,6 @@ const styles = StyleSheet.create({
     promptText: { marginHorizontal: 20, marginBottom: 20, fontSize: 14, fontStyle: 'italic', color: '#555', textAlign: 'center' },
     emptyText: { fontSize: 16, color: '#DB4437', textAlign: 'center' },
     
-    // Button Styles
     buttonRow: {
         padding: 16,
         backgroundColor: '#fff',
@@ -266,7 +328,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     generateBtn: {
-        backgroundColor: '#4285F4', // Google Blue
+        backgroundColor: '#4285F4',
         paddingVertical: 12,
         paddingHorizontal: 25,
         borderRadius: 25,
@@ -275,7 +337,7 @@ const styles = StyleSheet.create({
         ...shadow,
     },
     disabledBtn: {
-        backgroundColor: '#A9A9A9', // Grey when disabled
+        backgroundColor: '#A9A9A9',
     },
     generateBtnText: {
         color: '#fff',
@@ -285,16 +347,42 @@ const styles = StyleSheet.create({
     activityIndicator: {
         marginLeft: 10,
     },
-
-    // New Styles for Selection
-    selectionTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
+    selectionHeader: {
         padding: 16,
         backgroundColor: '#EFEFEF',
         borderBottomWidth: 1,
         borderBottomColor: '#DDD',
     },
+    selectionTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 8, 
+    },
+    tickButtonsContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 10,
+    },
+    tickButton: {
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        borderRadius: 8,
+    },
+    tickAllButton: {
+        backgroundColor: '#34A853',
+    },
+    untickAllButton: {
+        backgroundColor: '#DB4437',
+    },
+    excludeExpiredButton: {
+        backgroundColor: '#F7A34B',
+    },
+    tickButtonText: {
+        color: '#fff',
+        fontWeight: '700',
+        fontSize: 14,
+    },
+
     listContent: {
         paddingBottom: 80, 
     },
@@ -308,10 +396,21 @@ const styles = StyleSheet.create({
         borderBottomColor: '#EEE',
         backgroundColor: '#fff',
     },
+    ingredientInfo: {
+        flexDirection: 'row', 
+        alignItems: 'center',
+        flex: 1, 
+        marginRight: 10,
+    },
     ingredientText: {
         fontSize: 16,
         color: '#333',
-        flex: 1,
+        fontWeight: '600',
+        flexShrink: 1, 
+        marginRight: 10, 
+    },
+    expiryBadgeContainer: {
+        marginLeft: 'auto', 
     },
     footerInfo: {
         padding: 10,
@@ -323,7 +422,14 @@ const styles = StyleSheet.create({
     footerText: {
         fontSize: 14,
         color: '#555',
-    }
+    },
+
+    badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999, borderWidth: 1 },
+    badgeText: { fontSize: 10, fontWeight: "700", color: palette.text }, 
+    badgeExpired: { backgroundColor: "#FEE2E2", borderColor: "#FECACA" },
+    badgeSoon: { backgroundColor: "#FEF3C7", borderColor: "#FDE68A" },
+    badgeOk: { backgroundColor: "#D1FAE5", borderColor: "#A7F3D0" },
+    badgeNone: { backgroundColor: "#8a8a8a27", borderColor: "#bcbcbcff" },
   });
   
   const markdownStyles = StyleSheet.create({
