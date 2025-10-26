@@ -16,18 +16,54 @@ import { router } from "expo-router";
 import { AuthContext } from "@/contexts/AuthContext";
 import Loading from "@/components/Loading"; 
 import { MaterialIcons } from '@expo/vector-icons';
+import { daysLeft, isExpired } from "@/utils/dates"; // isExpired is key for this feature
 
 
-// --- New Component for Ingredient Selection Item ---
+// --- Expiry Status Logic ---
+
+// choose badge style based on expiry (null/empty = never expires)
+const statusStyle = (iso: string | null | undefined) => {
+    if (!iso || !iso.trim?.())
+      return [localStyles.badge, localStyles.badgeNone];
+  
+    if (isExpired(iso)) 
+      return [localStyles.badge, localStyles.badgeExpired];
+      
+    const d = daysLeft(iso);
+    if (Number.isFinite(d) && d <= 3) 
+      return [localStyles.badge, localStyles.badgeSoon];
+      
+    return [localStyles.badge, localStyles.badgeOk];
+};
+
+// text for badge
+const statusText = (iso: string | null | undefined) => {
+    if (!iso || !iso.trim?.()) return "No expiry";
+    return isExpired(iso) ? "Expired" : `${daysLeft(iso)}d left`;
+};
+
+
+// --- Ingredient Selection Item Component ---
 interface IngredientItemProps {
-    food: Partial<Food>;
+    food: Partial<Food> & { expiryDate?: string }; 
     isSelected: boolean;
     onToggle: (food: Partial<Food>) => void;
 }
 
 const IngredientItem: React.FC<IngredientItemProps> = ({ food, isSelected, onToggle }) => (
-    <Pressable style={styles.ingredientItem} onPress={() => onToggle(food)}>
-        <Text style={styles.ingredientText}>{food.name}</Text>
+    <Pressable style={localStyles.ingredientItem} onPress={() => onToggle(food)}>
+        <View style={localStyles.ingredientInfo}>
+            <Text style={localStyles.ingredientText}>{food.name}</Text>
+            
+            <View style={localStyles.expiryBadgeContainer}>
+                {food.expiryDate !== undefined && food.expiryDate !== null && (
+                    <View style={statusStyle(food.expiryDate)}>
+                        <Text style={localStyles.badgeText}>{statusText(food.expiryDate)}</Text>
+                    </View>
+                )}
+            </View>
+        </View>
+
         <MaterialIcons 
             name={isSelected ? "check-box" : "check-box-outline-blank"} 
             size={24} 
@@ -52,16 +88,49 @@ const RecipePage: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [ingredientNames, setIngredientNames] = useState<string>("");
     
-    // 🔑 THE CRITICAL STATE CHANGE: This controls which view is displayed
     const [recipeGenerated, setRecipeGenerated] = useState(false); 
 
-    // 🔄 MODIFIED: Now, instead of closing the screen, it resets the recipe view.
     const resetToSelection = () => {
-        setRecipeGenerated(false); // Go back to the ingredient selection view
-        setRecipe("");              // Clear the displayed recipe
-        setLoading(false);          // Ensure loading is false
+        setRecipeGenerated(false); 
+        setRecipe("");              
+        setLoading(false);          
     };
 
+    // 🆕 NEW FUNCTION: Select all ingredients
+    const handleSelectAll = useCallback(() => {
+        setSelectedIngredients(allIngredients);
+    }, [allIngredients]);
+
+    // 🆕 NEW FUNCTION: Deselect all ingredients
+    const handleUntickAll = useCallback(() => {
+        setSelectedIngredients([]);
+    }, []);
+
+    // 🔑 NEW FUNCTION: Exclude all expired items
+    const handleExcludeExpired = useCallback(() => {
+        if (allIngredients.length === 0) return;
+
+        // Filter out expired items from the currently selected list
+        const nonExpired = selectedIngredients.filter(food => {
+            // isExpired returns true if the date is in the past or if the date is null/undefined.
+            // We want to keep items that are NOT expired, OR items with no expiry date set.
+            const date = food.expiryDate;
+            if (!date || !date.trim()) {
+                return true; // Keep items with no expiry date
+            }
+            return !isExpired(date);
+        });
+
+        if (nonExpired.length === selectedIngredients.length) {
+             Alert.alert("No change needed", "No expired items were found in your current selection.");
+             return;
+        }
+
+        setSelectedIngredients(nonExpired);
+        Alert.alert("Expired Items Excluded", `${selectedIngredients.length - nonExpired.length} expired item(s) removed from selection.`);
+    }, [selectedIngredients]);
+    // NOTE: We depend on selectedIngredients to only remove expired items from the CURRENT SELECTION.
+    
     // --- Effect for Initial Data Loading ---
     useEffect(() => {
         const loadUser = async () => {
@@ -121,7 +190,7 @@ const RecipePage: React.FC = () => {
             
             const generatedRecipe = await generateRecipe(prompt); 
             setRecipe(generatedRecipe);
-            setRecipeGenerated(true); // Switches to the recipe display view
+            setRecipeGenerated(true); 
         } catch (e) {
             console.error("Recipe Generation Error:", e);
             Alert.alert("Recipe Error", "Could not generate recipe.");
@@ -136,7 +205,7 @@ const RecipePage: React.FC = () => {
 
     if (!USER_ID) {
         return (
-            <View style={styles.container}>
+            <View style={localStyles.container}>
                 <Loading text="Please login to generate a recipe."/>
             </View>
         );
@@ -144,7 +213,7 @@ const RecipePage: React.FC = () => {
     
     if (ingredientsLoading) {
         return (
-            <View style={styles.container}>
+            <View style={localStyles.container}>
                 <Loading text="Loading your ingredients..."/>
             </View>
         );
@@ -152,14 +221,13 @@ const RecipePage: React.FC = () => {
     
     if (allIngredients.length === 0) {
         return (
-            <View style={styles.container}>
-                <View style={styles.header}>
-                    <Text style={styles.title}>AI Recipe Generator</Text>
-                    {/* Only close the page if there's nothing to select */}
+            <View style={localStyles.container}>
+                <View style={localStyles.header}>
+                    <Text style={localStyles.title}>AI Recipe Generator</Text>
                     <Button title="Close" onPress={() => router.back()} /> 
                 </View>
-                <View style={styles.centered}>
-                    <Text style={styles.emptyText}>
+                <View style={localStyles.centered}>
+                    <Text style={localStyles.emptyText}>
                         Your food list is empty. Please add items to your tracker before generating a recipe.
                     </Text>
                 </View>
@@ -169,10 +237,9 @@ const RecipePage: React.FC = () => {
 
     // --- Recipe Generation View ---
     return (
-        <View style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.title}>AI Recipe Generator</Text>
-                {/* 🔑 MODIFIED: Use the resetToSelection function when recipe is visible, otherwise close the screen */}
+        <View style={localStyles.container}>
+            <View style={localStyles.header}>
+                <Text style={localStyles.title}>AI Recipe Generator</Text>
                 <Button 
                     title={recipeGenerated ? "Back to Selection" : "Close Page"} 
                     onPress={recipeGenerated ? resetToSelection : () => router.back()} 
@@ -180,30 +247,30 @@ const RecipePage: React.FC = () => {
             </View>
 
             {/* Selection/Generation Area */}
-            <View style={styles.buttonRow}>
+            <View style={localStyles.buttonRow}>
                 <Pressable 
                     onPress={handleGenerateRecipe} 
-                    style={[styles.generateBtn, selectedIngredients.length === 0 && styles.disabledBtn]} 
+                    style={[localStyles.generateBtn, selectedIngredients.length === 0 && localStyles.disabledBtn]} 
                     disabled={loading || selectedIngredients.length === 0 || recipeGenerated}
                 >
-                    <Text style={styles.generateBtnText}>
+                    <Text style={localStyles.generateBtnText}>
                         {loading ? 'Generating...' : `Generate Recipe (${selectedIngredients.length} items)`}
                     </Text>
-                    {loading && <ActivityIndicator size="small" color="#fff" style={styles.activityIndicator} />}
+                    {loading && <ActivityIndicator size="small" color="#fff" style={localStyles.activityIndicator} />}
                 </Pressable>
             </View>
             
             {loading ? (
                 // --- Loading State for AI Generation ---
-                <View style={styles.centered}>
+                <View style={localStyles.centered}>
                     <ActivityIndicator size="large" color="#4285F4" />
-                    <Text style={styles.loadingText}>Thinking up a delicious recipe...</Text>
-                    <Text style={styles.promptText}>Using: {ingredientNames}</Text>
+                    <Text style={localStyles.loadingText}>Thinking up a delicious recipe...</Text>
+                    <Text style={localStyles.promptText}>Using: {ingredientNames}</Text>
                 </View>
             ) : recipeGenerated ? (
                 // --- Recipe Display State ---
-                <ScrollView contentContainerStyle={styles.content}>
-                    <Text style={styles.promptText}>
+                <ScrollView contentContainerStyle={localStyles.content}>
+                    <Text style={localStyles.promptText}>
                         **Ingredients Used:** {ingredientNames}
                     </Text>
                     <Markdown style={markdownStyles}>
@@ -213,7 +280,34 @@ const RecipePage: React.FC = () => {
             ) : (
                 // --- Ingredient Selection State ---
                 <View style={{ flex: 1 }}>
-                    <Text style={styles.selectionTitle}>Select Ingredients to Use:</Text>
+                    <View style={localStyles.selectionHeader}>
+                        <Text style={localStyles.selectionTitle}>Select Ingredients to Use:</Text>
+                        
+                        <View style={localStyles.tickButtonsContainer}>
+                            <Pressable 
+                                onPress={handleSelectAll} 
+                                style={[localStyles.tickButton, localStyles.tickAllButton]}
+                                disabled={allIngredients.length === 0}
+                            >
+                                <Text style={localStyles.tickButtonText}>Tick All</Text>
+                            </Pressable>
+                            <Pressable 
+                                onPress={handleUntickAll} 
+                                style={[localStyles.tickButton, localStyles.untickAllButton]}
+                                disabled={selectedIngredients.length === 0}
+                            >
+                                <Text style={localStyles.tickButtonText}>Untick All</Text>
+                            </Pressable>
+                            {/* 🔑 ADDED EXCLUDE EXPIRED BUTTON */}
+                            <Pressable 
+                                onPress={handleExcludeExpired} 
+                                style={[localStyles.tickButton, localStyles.excludeExpiredButton]}
+                                disabled={selectedIngredients.length === 0}
+                            >
+                                <Text style={localStyles.tickButtonText}>Exclude Expired</Text>
+                            </Pressable>
+                        </View>
+                    </View>
                     <FlatList
                         data={allIngredients}
                         keyExtractor={(item, index) => item.name + index}
@@ -224,10 +318,10 @@ const RecipePage: React.FC = () => {
                                 onToggle={toggleIngredientSelection}
                             />
                         )}
-                        contentContainerStyle={styles.listContent}
+                        contentContainerStyle={localStyles.listContent}
                     />
-                    <View style={styles.footerInfo}>
-                        <Text style={styles.footerText}>
+                    <View style={localStyles.footerInfo}>
+                        <Text style={localStyles.footerText}>
                             {selectedIngredients.length} of {allIngredients.length} ingredients selected.
                         </Text>
                     </View>
@@ -237,9 +331,9 @@ const RecipePage: React.FC = () => {
     );
 };
 
-// --- Styles (Unchanged) ---
-// ... (Keep your original styles here)
-const styles = StyleSheet.create({
+// --- Styles (Updated to include Exclude Expired Styles) ---
+
+const localStyles = StyleSheet.create({
     container: { flex: 1, backgroundColor: "#F7F7F7" },
     header: {
       padding: 16,
@@ -286,15 +380,46 @@ const styles = StyleSheet.create({
         marginLeft: 10,
     },
 
-    // New Styles for Selection
-    selectionTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
+    // SELECTION HEADER STYLES
+    selectionHeader: {
         padding: 16,
         backgroundColor: '#EFEFEF',
         borderBottomWidth: 1,
         borderBottomColor: '#DDD',
     },
+    selectionTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 8, 
+    },
+    // TICK BUTTONS STYLES
+    tickButtonsContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap', // Allow buttons to wrap to next line if space is tight
+        gap: 10,
+    },
+    tickButton: {
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        borderRadius: 8,
+    },
+    tickAllButton: {
+        backgroundColor: '#34A853', // Green
+    },
+    untickAllButton: {
+        backgroundColor: '#DB4437', // Red
+    },
+    // 🔑 NEW STYLE: Exclude Expired Button
+    excludeExpiredButton: {
+        backgroundColor: '#F7A34B', // Orange/Amber
+    },
+    tickButtonText: {
+        color: '#fff',
+        fontWeight: '700',
+        fontSize: 14,
+    },
+    // END NEW STYLES
+
     listContent: {
         paddingBottom: 80, 
     },
@@ -308,10 +433,21 @@ const styles = StyleSheet.create({
         borderBottomColor: '#EEE',
         backgroundColor: '#fff',
     },
+    ingredientInfo: {
+        flexDirection: 'row', 
+        alignItems: 'center',
+        flex: 1, 
+        marginRight: 10,
+    },
     ingredientText: {
         fontSize: 16,
         color: '#333',
-        flex: 1,
+        fontWeight: '600',
+        flexShrink: 1, 
+        marginRight: 10, 
+    },
+    expiryBadgeContainer: {
+        marginLeft: 'auto', 
     },
     footerInfo: {
         padding: 10,
@@ -323,7 +459,15 @@ const styles = StyleSheet.create({
     footerText: {
         fontSize: 14,
         color: '#555',
-    }
+    },
+
+    // BADGE STYLES
+    badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999, borderWidth: 1 },
+    badgeText: { fontSize: 10, fontWeight: "700", color: palette.text }, 
+    badgeExpired: { backgroundColor: "#FEE2E2", borderColor: "#FECACA" },
+    badgeSoon: { backgroundColor: "#FEF3C7", borderColor: "#FDE68A" },
+    badgeOk: { backgroundColor: "#D1FAE5", borderColor: "#A7F3D0" },
+    badgeNone: { backgroundColor: "#8a8a8a27", borderColor: "#bcbcbcff" },
   });
   
   const markdownStyles = StyleSheet.create({
