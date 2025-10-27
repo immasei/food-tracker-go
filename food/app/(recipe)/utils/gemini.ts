@@ -7,13 +7,13 @@ const model = 'gemini-2.5-flash';
 
 /**
  * Generates a cooking recipe based on a list of ingredients.
- * @param ingredients A string containing the comma-separated names of the available ingredients.
+ * @param prompt A string containing the comma-separated names of the available ingredients.
  * @returns The generated recipe text from the Gemini model.
  */
-export async function generateRecipe(ingredients: string): Promise<string> {
+export async function generateRecipe(prompt: string): Promise<string> {
   const systemInstruction = 'You are a helpful and creative culinary AI. Your task is to generate one simple and delicious recipe based only on the provided list of ingredients. The recipe must be formatted clearly with a Title, a concise Ingredients list, and numbered Step-by-step Instructions. Only use ingredients from the list. If possible, suggest an alternative ingredient for a more complex version of the recipe at the end.';
 
-  const userPrompt = `Generate a recipe using these ingredients: ${ingredients}`;
+  const userPrompt = prompt;
 
   try {
     const config: GenerateContentConfig = {

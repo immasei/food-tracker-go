@@ -22,6 +22,7 @@ type UserData = {
   allergy_info: string;
   location: Location;
   pushEnabled: boolean;
+  expiring_days: number;
 };
 
 // Data type definition for location
@@ -147,7 +148,8 @@ export default function UserInfoSettings() {
           taste_pref: tastePref,
           allergy_info: allergyInfo,
           location: location,
-          pushEnabled: data.pushEnabled ?? false,
+          pushEnabled: data.pushEnabled ?? false,  
+          expiring_days: data.expiring_days ?? 3,
         });
       } else {
         setUserData(null);

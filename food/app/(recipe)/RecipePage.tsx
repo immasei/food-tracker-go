@@ -33,7 +33,7 @@ const statusText = (iso: string | null | undefined) => {
 };
 
 interface IngredientItemProps {
-    food: Partial<Food> & { expiryDate?: string }; 
+    food: Partial<Food> & { expiryDate?: string | null }; 
     isSelected: boolean;
     onToggle: (food: Partial<Food>) => void;
 }
@@ -66,7 +66,8 @@ const RecipePage: React.FC = () => {
     
     const [userData, setUserData] = useState<User | null>(null);
 
-    const { filteredSorted: allIngredients, isLoading: ingredientsLoading } = fetchFoods("", USER_ID); 
+    const { filteredSorted: allIngredients } = fetchFoods("", USER_ID);  // Fixed editer error here
+    const [loadingFood, setLoadingFood] = useState(true);
     
     const [selectedIngredients, setSelectedIngredients] = useState<Partial<Food>[]>([]);
 
@@ -75,6 +76,21 @@ const RecipePage: React.FC = () => {
     const [ingredientNames, setIngredientNames] = useState<string>("");
     
     const [recipeGenerated, setRecipeGenerated] = useState(false); 
+
+    // If user is logged in start to display loading food animation
+    useEffect(() => {
+        if (!USER_ID) {
+            setLoadingFood(false);
+            return;
+        }
+        setLoadingFood(true);
+    }, [USER_ID]);
+
+    // Stop to show the loading food animation when food is loaded
+    useEffect(() => {
+        if (!USER_ID) return;
+        setLoadingFood(false);
+    }, [USER_ID, allIngredients]);  // allIngredients exists: food is loaded
 
     const resetToSelection = () => {
         setRecipeGenerated(false); 
@@ -158,10 +174,10 @@ const RecipePage: React.FC = () => {
         setRecipe(""); 
         
         try {
-            const dietPref = userData?.dietaryPreference ? `, based on a ${userData.dietaryPreference} diet` : '';
-            const allergies = userData?.allergies ? `, avoiding ${userData.allergies.join(', ')}` : '';
+            const dietPref = userData?.taste_pref ? `User's taste preference is: ${userData.taste_pref}.` : '';
+            const allergies = userData?.allergy_info ? `User's allergy information is: ${userData.allergy_info}.` : '';
 
-            const prompt = `Generate a recipe using ONLY these ingredients: ${names}${dietPref}${allergies}. Provide the recipe title, ingredients list, and instructions in Markdown format.`;
+            const prompt = `Generate a recipe using ONLY these ingredients: ${names}. ${dietPref} ${allergies} Provide the recipe title, ingredients list, and instructions in Markdown format.`;
             
             const generatedRecipe = await generateRecipe(prompt); 
             setRecipe(generatedRecipe);
@@ -183,7 +199,7 @@ const RecipePage: React.FC = () => {
         );
     }
     
-    if (ingredientsLoading) {
+    if (loadingFood) {
         return (
             <View style={localStyles.container}>
                 <Loading text="Loading your ingredients..."/>
@@ -281,7 +297,7 @@ const RecipePage: React.FC = () => {
                     </View>
                     <FlatList
                         data={allIngredients}
-                        keyExtractor={(item, index) => item.name + index}
+                        keyExtractor={(item, index)=>`${item.id ?? item.name ?? index}`}  // Fixed editer error here
                         renderItem={({ item }) => (
                             <IngredientItem 
                                 food={item} 
@@ -430,15 +446,14 @@ const localStyles = StyleSheet.create({
     badgeSoon: { backgroundColor: "#FEF3C7", borderColor: "#FDE68A" },
     badgeOk: { backgroundColor: "#D1FAE5", borderColor: "#A7F3D0" },
     badgeNone: { backgroundColor: "#8a8a8a27", borderColor: "#bcbcbcff" },
-  });
+});
   
-  const markdownStyles = StyleSheet.create({
-      body: { fontSize: 16, lineHeight: 24, color: '#333' },
-      heading1: { fontSize: 24, fontWeight: 'bold', marginBottom: 10, color: '#4285F4' },
-      heading2: { fontSize: 20, fontWeight: 'bold', marginTop: 15, marginBottom: 5, color: '#DB4437' },
-      list_item: { marginBottom: 4 },
-      strong: { fontWeight: 'bold' }
-  });
-
+const markdownStyles = StyleSheet.create({
+    body: { fontSize: 16, lineHeight: 24, color: '#333' },
+    heading1: { fontSize: 24, fontWeight: 'bold', marginBottom: 10, color: '#4285F4' },
+    heading2: { fontSize: 20, fontWeight: 'bold', marginTop: 15, marginBottom: 5, color: '#DB4437' },
+    list_item: { marginBottom: 4 },
+    strong: { fontWeight: 'bold' }
+});
 
 export default RecipePage;

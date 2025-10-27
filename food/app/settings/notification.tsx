@@ -2,7 +2,10 @@ import React, { useState, useEffect, useContext, useCallback, } from 'react';
 import { View, Text, StyleSheet, FlatList, ScrollView, Pressable, TouchableOpacity, Switch, Platform, Alert } from 'react-native';
 import { useRouter } from "expo-router";
 import { AuthContext } from "../../contexts/AuthContext";
+import firebaseApp from "../../config/firebaseConfig";
+import { getFirestore, doc, updateDoc, serverTimestamp, } from "firebase/firestore";
 import EditCard from "./EditCard";
+import { useMessage } from "./Message";
 
 // Imports notifications by Linh
 import { useToast } from "../../components/Toast";
@@ -11,17 +14,23 @@ import { User, UStats } from "@/types/user"
 import { fetchUser, fetchStats, updateUser } from "@/services/userService";
 import { sendExpoPush, registerForPushAndSave } from "../(profile2)/utils/pushNotification"
 
+// Initialize Firebase Database
+const db = getFirestore(firebaseApp);
+
 
 
 // NotificationSettings React Component
 export default function NotificationSettings() {
   const router = useRouter();  // Expo router for url jumping
-  const { user, authChecked } = useContext(AuthContext);     // Use AuthContext to get user info and logout method
+  const { user, authChecked } = useContext(AuthContext);  // Use AuthContext to get user info and logout method
   const USER_ID = user?.uid ?? null;  // Current user ID used for check logged in status
-  const [userData, setUserData] = useState<User | null>(null);   // Variable to store user data
+  const [userData, setUserData] = useState<User | null>(null);  // Variable to store user data
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [pushEnabled, setPushEnabled] = useState(false);
+  const [expiringDays, serExpiringDays] = useState(3);  // Default 3 days
+  
+  const { showMessage, Message} = useMessage();
 
   // Push notification by Linh
   const { show, Toast } = useToast(); // Toast for in-app
@@ -44,6 +53,7 @@ export default function NotificationSettings() {
 
       setUserData(userRes);
       setPushEnabled(Boolean(userRes?.pushEnabled)); // Load cloud push switch setting
+      serExpiringDays(userRes?.expiring_days ? userRes.expiring_days : 3);
     } catch (err) {
       show("ERR: loading user data", "danger");
       console.error("Error refreshing:", err);
@@ -94,8 +104,8 @@ export default function NotificationSettings() {
       // Check if the current platform is Android
       if (Platform.OS === "android") {
         Alert.alert(
-          "Not available on Android",
-          "Push notifications are not supported or disabled for Android devices yet."
+          "Not abvailable on Expo Go",
+          "Note: On Expo Go versions, we can not send you system-level notifications. But we provide a demo test notification."
         );
       } else {
         // Send push notification using Expo
@@ -114,26 +124,72 @@ export default function NotificationSettings() {
   const getPushData = async () => {
     const stats = await fetchStats(USER_ID);   // Fetch food stats
     const expiringItems = stats.expiringItems; // Calculate expiring items
-    const expDays = user.expiring_days ? user.expiring_days : 3; // Read expring days setting from cloud, default 3 days.
+    const expDays = expiringDays; // Read expring days setting from cloud, default 3 days.
 
     // Prepare notification content
     const title = "Food expiring soon";
     let body = "";
     if (expiringItems === 0) {
-      body = `No items expiring in ≤${expDays} days`; 
+      body = `No items expiring in ≤${expDays} days.`; 
     } else if (expiringItems === 1) {
-      body = `You have 1 item expiring in ≤${expDays} days`;
+      body = `You have 1 item expiring in ≤${expDays} days.`;
     } else {
-      body = `You have ${expiringItems} items expiring in ≤${expDays} days`;
+      body = `You have ${expiringItems} items expiring in ≤${expDays} days.`;
     }
     return {title, body, expiringItems };
   }
 
   // Method to send test notifications
   const sendTestPush = async () => {
-    const { body } = await getPushData(); // Prepare notification data
-    show(body, "success");
+    const title = "Food Tracker Go";
+    const { body: text } = await getPushData(); // Prepare notification data
+    //const message = `${title}\n${text}`
+    //show(message, "success");
+
+    showMessage(title, text);
   }
+
+  // Method to show Expo Go note message
+  const showExpoGoNote = async () => {
+    const note = "Note: On Expo Go versions, we can not send you system-level notifications. But we provide a demo test notification."
+    show(note, "success");
+  }
+
+  // Method used to update expiring days
+  const updateExpringDays = useCallback(async (newDays: number) => {
+    if (!userData?.id) {
+      throw new Error("User data not loaded");
+    }
+
+    const payload = {
+      expiring_days: newDays,
+      updatedAt: serverTimestamp(),
+    };
+
+    await updateDoc(doc(db, "users", userData.id), payload);
+    setUserData(prev => (prev ? { ...prev, expiring_days: newDays } : prev));
+    serExpiringDays(newDays);
+  }, [userData?.id]);
+
+  // Method to handdle edit expring days
+  const handdleEditExpiringDays = useCallback(async (newDaysString: string) => {
+    const newDays = Number.parseInt(newDaysString.trim(), 10);
+
+    if (Number.isNaN(newDays)) {
+      throw new Error("Please input the number of days.");
+    }
+
+    if (newDays < 0 || newDays > 380) {
+      throw new Error("Please input a suitable number of days.");
+    }
+
+    await updateExpringDays(newDays);
+    show("Expring Days updated", "success");
+  }, [updateExpringDays, show]);
+
+  // Method to display expring days
+  const expringDaysString = `${expiringDays} days`;
+
 
   if (loading || !USER_ID) {
     return (
@@ -180,9 +236,9 @@ export default function NotificationSettings() {
               subtitle="Notify at this time of a day"
               value="8:00 AM"
               placeholder="8:00 AM"
-              message="Notify at this time of a day. [Not finished now]"
+              message={`Notify at this time of a day. \nNote: In Expo Go versions, we can not send you system-level notifications. But we provide a demo test notification.`}
               disabled={!userData}
-              onSubmit={sendTestPush} // Edit later
+              onSubmit={showExpoGoNote} // Show Expo Go note message (same content as above)
               showToast={show}
               inputProps={{ autoCapitalize: "words", maxLength: 32 }}
             />
@@ -227,11 +283,11 @@ export default function NotificationSettings() {
             <EditCard
               title="Notify before expiration"
               subtitle="Days to define expiring food"
-              value="3 days"
+              value={expringDaysString}
               placeholder="3 days"
-              message="Days to define expiring food. [Not finished now]"
+              message="Please input a number. This number is the days to define expiring food."
               disabled={!userData}
-              onSubmit={sendTestPush} // Edit later
+              onSubmit={handdleEditExpiringDays}
               showToast={show}
               inputProps={{ autoCapitalize: "words", maxLength: 32 }}
               firstItem
@@ -256,6 +312,7 @@ export default function NotificationSettings() {
       />
       {/*</ScrollView>*/}
       <Toast />
+      <Message />
     </View>
   );
 }
