@@ -18,6 +18,7 @@ type UserData = {
   taste_pref: string;
   allergy_info: string;
   location: Location;
+  expiring_days: number;
 };
 
 // Data type definition for location
@@ -50,9 +51,6 @@ const EMPTY_STATS: FoodStats = {
   expiredItems: 0,
   categories: 0,
 };
-
-// Number of days to define expiring soon food. Can be added to settings later.
-const EXPIRING_WINDOW_DAYS = 3;
 
 
 
@@ -95,6 +93,7 @@ export default function Profile() {
           taste_pref: tastePref,
           allergy_info: allergyInfo,
           location: data.location ?? { formatted: "" },
+          expiring_days: data.expiring_days ?? 3,
         });
       } else {
         setUserData(null);
@@ -131,11 +130,12 @@ export default function Profile() {
       const snapshot2 = await getDocs(foodQuery);
       const totals: FoodStats = { ...EMPTY_STATS };
       const categories = new Set<string>();
+      const expDays = userData?.expiring_days ? userData.expiring_days : 3;
 
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const soon = new Date(today);
-      soon.setDate(today.getDate() + EXPIRING_WINDOW_DAYS);
+      soon.setDate(today.getDate() + expDays);
 
       // Function to parse expiry date from various formats
       const parseExpiryDate = (value: unknown): Date | null => {

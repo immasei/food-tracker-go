@@ -33,6 +33,7 @@ export async function fetchUser(USER_ID: string) {
       pushEnabled: Boolean(d.pushEnabled),
       taste_pref: d.taste_pref ?? null,
       allergy_info: d.allergy_info ?? null,
+      expiring_days: d.expiring_days ?? 3,
     };
     return u;
 }

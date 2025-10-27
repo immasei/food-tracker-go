@@ -8,6 +8,7 @@ export type User = {
   pushEnabled?: boolean; 
   taste_pref?: string | null;
   allergy_info?: string | null;
+  expiring_days?: number | 3;
 };
 
 export type ULocation = {
