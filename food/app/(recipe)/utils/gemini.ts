@@ -19,7 +19,7 @@ export async function generateRecipe(prompt: string): Promise<string> {
     const config: GenerateContentConfig = {
       systemInstruction,
       temperature: 0.8, // Slightly creative response
-      maxOutputTokens: 2048,
+      maxOutputTokens: 8192, // Fix: Increase max token to avoid Gemini error
     };
 
     const response = await ai.models.generateContent({
@@ -28,9 +28,32 @@ export async function generateRecipe(prompt: string): Promise<string> {
       config: config,
     });
 
-    // Avoid type check error
-    const text = response.text ?? "";
-    if (!text) throw new Error("No recipe text");
+    //console.log(JSON.stringify(response, null, 2)); // Log Gemini return data for trouble shooting
+
+    // Check Gemini response data
+    const candidate = response.candidates?.[0];
+    if (!candidate) {
+      throw new Error("No recipe candidate returned");
+    }
+
+    if (candidate.finishReason === "MAX_TOKENS") {
+      console.warn("Gemini output truncated: reached maxOutputTokens.", candidate);
+    } else if (candidate.finishReason && candidate.finishReason !== "FINISH_REASON_UNSPECIFIED") {
+      console.warn("Gemini blocked or altered the output", candidate.finishReason, candidate.safetyRatings);
+    }
+
+    const text =
+      candidate.content?.parts
+        ?.map((part) => (typeof part === "object" && part !== null && "text" in part && typeof (part as { text?: unknown }).text === "string"
+          ? (part as { text: string }).text
+          : ""))
+        .join("")
+        .trim() ?? "";
+
+    if (!text) {
+      throw new Error(`No recipe text (finish reason: ${candidate.finishReason ?? "unknown"})`);
+    }
+
     return text;
   } catch (error) {
     console.error("Gemini API call failed:", error);
