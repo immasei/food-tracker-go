@@ -36,6 +36,7 @@ This guide will walk you through how to achieve the app’s **minimum value prop
 ```
 cd COMP5216-2025-GA-T02-G03/food
 ```
+```
 npm install
 ```
 ```
