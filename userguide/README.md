@@ -12,10 +12,11 @@ Please run the app on Expo Go. (IOS preferred)
 - Tabs
   - [1. Food Tracker](#-1-food-tracker)
   - [2. Food OCR Scanner (Add by Scanning)](#-2-food-ocr-scanner-add-by-scanning)
-  - [3. AI-Powered Recipe Generator](#3-ai-powered-recipe-generator)
+  - [3. AI-Powered Recipe Generator](#-3-ai-powered-recipe-generator)
   - [4. Nearby Food Discovery (Share Food)](#-4-nearby-food-discovery-share-food)
-  - [5. Profile Manager](#5-profile-manager)
-
+  - [5. Profile Manager](#-5-profile-manager)
+- [Privacy & Permissions](#privacy--permissions)
+- [Troubleshooting FAQ](#troubleshooting-faq)
 
 ## Introduction
 
@@ -69,6 +70,14 @@ The **Food Tracker** screen is where you manage all your items.
 4. **Save** your item appears in the list, with color-coded expiry status.  
 5. Optional: toggle “Shared” to make it visible to others in *Nearby*. (but please set your user location in **Profile** first)
 
+## Screenshots
+
+<p align="center">
+  <img src="https://github.sydney.edu.au/COMP5216-2025-S2/COMP5216-2025-GA-T02-G03/assets/13002/6936184c-7cd5-42f1-ab26-a06eccab37e9" width="27%" />
+  <img src="https://github.sydney.edu.au/COMP5216-2025-S2/COMP5216-2025-GA-T02-G03/assets/13002/18ba8662-8b77-48c0-a5c2-6033b75ffb8b" width="27%" />
+  <img src="https://github.sydney.edu.au/COMP5216-2025-S2/COMP5216-2025-GA-T02-G03/assets/13002/47768e4d-54f6-4e18-8208-a3dca9746d1a" width="27%" />
+</p>
+
 --- 
 ## 📷 2. Food OCR Scanner (Add by Scanning)
 
@@ -90,9 +99,11 @@ The **Food Scanner** screen allows users to capture food labels to auto-fill ite
 - Tap **Reset** to clear and start over.
 
 ### Screenshots
-| Before Detection | After Detection |
-|------------------|-----------------|
-| ![Scanner before](./assets/scanner-before.png) | ![Scanner detected](./assets/scanner-detected.png) |
+
+<p align="center">
+  <img src="https://github.sydney.edu.au/COMP5216-2025-S2/COMP5216-2025-GA-T02-G03/assets/13002/3e72bd02-2c69-40ff-8b42-68650bd072ab" width="27%" />
+  <img src="https://github.sydney.edu.au/COMP5216-2025-S2/COMP5216-2025-GA-T02-G03/assets/13002/34d5d15d-9c9a-4ed2-b000-bb5f233b7488" width="27%" />
+</p>
 
 ---
 ## 3.
@@ -119,13 +130,38 @@ The **Nearby Food Discovery** let you discover and share food with people around
   - View their shared items (name, category, days left).
 - **Reload** to refresh map and listings.
 
-### Screenshot
-![Nearby Food Map](./assets/nearby-map.png)
-
 ### Notes
 - Only users **within 5 km** and with **shared, non-expired** food appear.
 - Users without a saved location are hidden.
 
+### Screenshot
+
+<p align="center">
+  <img src="https://github.sydney.edu.au/COMP5216-2025-S2/COMP5216-2025-GA-T02-G03/assets/13002/f501b321-13a6-4817-85ff-104aae0b315a" width="27%" />
+  <img src="https://github.sydney.edu.au/COMP5216-2025-S2/COMP5216-2025-GA-T02-G03/assets/13002/369ff371-ceb0-48ba-8eea-088e3ddb500e" width="27%" />
+  <img src="https://github.sydney.edu.au/COMP5216-2025-S2/COMP5216-2025-GA-T02-G03/assets/13002/c2dab4db-f268-4231-bf32-1a71cf374ece" width="27%" />
+</p>
+
 ---
 
 ## 5. 
+
+---
+
+## Privacy & Permissions
+
+- Camera is used only for on-device capture and OCR processing.
+
+- Location is used to show approximate proximity (5 km).
+You can opt to set a manual address if you prefer.
+
+- Contact information you provide is shown to others when they tap your pin.
+
+
+## Troubleshooting FAQ
+
+| Issue | Possible Cause / Solution |
+|-------|----------------------------|
+| Add button disabled | At least one scanned field (Item or Expiry) must be detected. |
+| Can’t see myself on map | Ensure location is saved and at least one non-expired shared item exists. |
+| OCR misreads expiry | Retake photo closer to the printed date, under better lighting. |
