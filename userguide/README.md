@@ -121,12 +121,34 @@ The **Food Scanner** screen allows users to capture food labels to auto-fill ite
 ### Screenshots
 
 <p align="center">
+  <img src="img/recipe_1.png" width="27%" />
+  <img src="img/recipe_2.png" width="27%" />
+</p>
+
+---
+## 3. AI-Powered Recipe Generator
+
+The **Recipe** page generate recipe based on user selected ingredients.
+
+### Flow
+1. Tap **Recipe** button
+2. Select desired ingredients to be included in the recipe.  
+3. Tap **Generate Recipe (? items)** on top to generate recipe from chosen ingredients.
+4. Tap **Back to Selection** on top to go back to the ingredient selection page.
+
+### Tips
+- On default, it selects all items to be part of ingredient
+  - **Tick All** to select all ingredients
+  - **Untick All** to manually select
+  - **Exclude Expired** to exclude expired items from the ingredient list.
+
+### Screenshots
+
+<p align="center">
   <img src="https://github.sydney.edu.au/COMP5216-2025-S2/COMP5216-2025-GA-T02-G03/assets/13002/3e72bd02-2c69-40ff-8b42-68650bd072ab" width="27%" />
   <img src="https://github.sydney.edu.au/COMP5216-2025-S2/COMP5216-2025-GA-T02-G03/assets/13002/34d5d15d-9c9a-4ed2-b000-bb5f233b7488" width="27%" />
 </p>
 
----
-## 3.
 
 
 ---
