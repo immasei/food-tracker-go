@@ -2,7 +2,7 @@
 
 **COMP4216 / COMP5216 Group Project**
 
-[**User Guide**](userguide/index.md)
+[**User Guide**](userguide/README.md)
 
 ## Introduction
 
@@ -31,9 +31,9 @@ To install the necessary packages for the AI Recipe feature, run the following c
 
 ```bash
 cd food
+```
+```bash
 npm install
-npm install react-native-markdown-display
-npm install @google/genai
 ```
 
 All npm modules should be installed in project's `food` directory. 
@@ -49,11 +49,11 @@ npm start
 
 ## Demo Account for Tester
 
-Email: `123456@abc.com`
+Email: `kitkat@gmail.com`
 
 Password: `123456`
 
-... (Please replace with true account here.)
+You can also register your own accounts. Our app is open to register.
 
 
 
