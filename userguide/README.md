@@ -145,8 +145,8 @@ The **Recipe** page generate recipe based on user selected ingredients.
 ### Screenshots
 
 <p align="center">
-  <img src="img/recipe_1.png" width="27%" />
-  <img src="img/recipe_2.png" width="27%" />
+  <img src="https://github.sydney.edu.au/COMP5216-2025-S2/COMP5216-2025-GA-T02-G03/assets/13037/9737f696-6003-4746-8dc4-7eec5e74b3cb" width="27%" />
+  <img src="https://github.sydney.edu.au/COMP5216-2025-S2/COMP5216-2025-GA-T02-G03/assets/13037/f2d0bc71-6259-45d1-87fd-8ff0e4021456" width="27%" />
 </p>
 
 
