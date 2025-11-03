@@ -19,7 +19,7 @@ We initialized from food directory which contains mini project of week 5 content
 - Food List main page to effectively manage food stock both inside and outside the fridge.
 - Notification on mobile phones for approaching expiration dates.
 - Effectively adding items through barcode scanning and AI receipt recognition.
-- Cloud synchronization and data sharing among family members.
+- Cloud storage of food list and user data.
 - AI recipe recommendation based on food stock to consume items before expiry.
 - Sharing unwanted food with nearby app users.
 

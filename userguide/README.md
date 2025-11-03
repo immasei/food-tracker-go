@@ -27,7 +27,7 @@ Its core features are:
 2. **Food OCR Scanner** – Add items by scanning labels using your camera.
 3. **AI-Powered Recipe Generator** -  
 4. **Nearby Food Discovery** – Find and share food with people nearby.
-5. **Profile Manager** - 
+5. **Profile Manager** - Manage your profile and view your consuming statistics.
 
 This guide will walk you through how to achieve the app’s **minimum value proposition**:  
 > “Track and share food efficiently with expiry awareness.”
