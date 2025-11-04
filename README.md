@@ -63,6 +63,12 @@ You can also register your own accounts. Our app is open to register.
 
 ... (Introduce the Code Structure and mention some file of Key Components here)
 
+The main components are located inside the ./food/app/ directory. In the ./food/app/ directory:
+- The (auth) folder contains the login and sign up features.
+- 
+Resources, such as images, are located in the ./food/assets/ directory.
+Firebase configuration files are located in the ./food/config/ directory.
+
 
 
 ### Functionality of Key Components
