@@ -94,6 +94,8 @@ The surrounding directories are modules used commonly by all the pages:
 
 Combined, the structure gives you a clean split between navigation shells, feature modules, and the `service/util` layers, so future features can follow the same pattern—add a service first, wire it into a feature screen, and expose shared bits through components or contexts.
 
+`(recipe)/utils/gemini.tsx` combine user-generated content with pre-generated prompt specialized for recipe generation, and link it to Gemini api.
+
 Notes for future developers: 
 
 1. Run the Expo app (`npx expo start`) to confirm the flows you extend still mount cleanly. 
