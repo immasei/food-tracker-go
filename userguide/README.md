@@ -4,21 +4,37 @@
 Please run the app on Expo Go. (IOS preferred)
 ```
 
-# Table of Contents
+## Table of Contents
 
 - [Introduction](#introduction)
+- [Core Features](#core-features)
 - [How to Run](#how-to-run)
 - [Test Account](#test-account)
 - Tabs
-  - [1. Food Tracker](#-1-food-tracker)
-  - [2. Food OCR Scanner (Add by Scanning)](#-2-food-ocr-scanner-add-by-scanning)
-  - [3. AI-Powered Recipe Generator](#-3-ai-powered-recipe-generator)
-  - [4. Nearby Food Discovery (Share Food)](#-4-nearby-food-discovery-share-food)
-  - [5. Profile Manager](#-5-profile-manager)
+  - [1. Food Tracker](#1-food-tracker)
+  - [2. Food OCR Scanner (Add by Scanning)](#2-food-ocr-scanner-add-by-scanning)
+  - [3. AI-Powered Recipe Generator](#3-ai-powered-recipe-generator)
+  - [4. Nearby Food Discovery (Share Food)](#4-nearby-food-discovery-share-food)
+  - [5. User Profile](#5-user-profile)
+- Other Pages
+  - [Registration and Login](#registration-and-login)
+  - [Settings](#settings)
 - [Privacy & Permissions](#privacy--permissions)
 - [Troubleshooting FAQ](#troubleshooting-faq)
 
+
+
 ## Introduction
+
+Do you often throw away expired food because of forgetting the expiry date? Responsible consumption and production is one of the United Nations sustainable goals. 
+
+To address the food waste problem caused by food expiration and respond to the UN Sustainable Goal, we developed a mobile app named **Food Tracker Go**. The app helps you reduce food waste by tracking expiry dates and sending notifications before your food expires.
+
+Our main purpose is to help you consume food before it expires to avoid food waste by mobile phone notifications. The app has basic features including adding and management of food items. Then it will track the expiration dates and send reminder notifications. To minimize food waste as much as possible, we also have AI recipe recommendation function and a self-pick-up food sharing feature with users nearby.
+
+
+
+## Core Features
 
 **Food Tracker Go** helps users manage their groceries, reduce waste, and share surplus food with the community.  
 Its core features are:
@@ -33,27 +49,28 @@ This guide will walk you through how to achieve the app’s **minimum value prop
 > “Track and share food efficiently with expiry awareness.”
 
 ## How to Run
-```
+```bash
 cd COMP5216-2025-GA-T02-G03/food
 ```
-```
+```bash
 npm install
 ```
-```
+```bash
 npm start
 ```
 
-## Test account
-```
-kitkat@gmail.com
-```
-```
-123456
-```
+## Test Account
+
+
+Email: `kitkat@gmail.com`
+
+Password: `123456`
+
+You can also register your own accounts. Our app is open to register.
 
 ---
 
-## 🍎 1. Food Tracker
+## 1. Food Tracker
 
 The **Food Tracker** screen is where you manage all your items.
 
@@ -65,7 +82,7 @@ The **Food Tracker** screen is where you manage all your items.
 - Tap to **edit** item details
 - Swipe left to **delete** item
 
-## How to Use
+### How to Use
 1. Tap the **Add** button.  
 2. Fill in `name`, `category`, and `expiry date`
   -  All fields can be leaved blank
@@ -73,7 +90,7 @@ The **Food Tracker** screen is where you manage all your items.
 4. **Save** your item appears in the list, with color-coded expiry status.  
 5. Optional: toggle “Shared” to make it visible to others in *Nearby*. (but please set your user location in **Profile** first)
 
-## Screenshots
+### Screenshots
 
 <p align="center">
   <img src="https://github.sydney.edu.au/COMP5216-2025-S2/COMP5216-2025-GA-T02-G03/assets/13002/6936184c-7cd5-42f1-ab26-a06eccab37e9" width="27%" />
@@ -82,7 +99,7 @@ The **Food Tracker** screen is where you manage all your items.
 </p>
 
 --- 
-## 📷 2. Food OCR Scanner (Add by Scanning)
+## 2. Food OCR Scanner (Add by Scanning)
 
 The **Food Scanner** screen allows users to capture food labels to auto-fill item details via OCR.
 
@@ -109,12 +126,34 @@ The **Food Scanner** screen allows users to capture food labels to auto-fill ite
 </p>
 
 ---
-## 3.
+## 3. AI-Powered Recipe Generator
+
+The **Recipe** page generate recipe based on user selected ingredients.
+
+### Flow
+1. Tap **Recipe** button
+2. Select desired ingredients to be included in the recipe.  
+3. Tap **Generate Recipe (? items)** on top to generate recipe from chosen ingredients.
+4. Tap **Back to Selection** on top to go back to the ingredient selection page.
+
+### Tips
+- On default, it selects all items to be part of ingredient
+  - **Tick All** to select all ingredients
+  - **Untick All** to manually select
+  - **Exclude Expired** to exclude expired items from the ingredient list.
+
+### Screenshots
+
+<p align="center">
+  <img src="https://github.sydney.edu.au/COMP5216-2025-S2/COMP5216-2025-GA-T02-G03/assets/13037/9737f696-6003-4746-8dc4-7eec5e74b3cb" width="27%" />
+  <img src="https://github.sydney.edu.au/COMP5216-2025-S2/COMP5216-2025-GA-T02-G03/assets/13037/f2d0bc71-6259-45d1-87fd-8ff0e4021456" width="27%" />
+</p>
+
 
 
 ---
 
-## 📍 4. Nearby Food Discovery (Share Food)
+## 4. Nearby Food Discovery (Share Food)
 
 The **Nearby Food Discovery** let you discover and share food with people around you.
 
@@ -147,9 +186,34 @@ The **Nearby Food Discovery** let you discover and share food with people around
 
 ---
 
-## 5. 
+## 5. User Profile
+
 
 ---
+
+## Registration and Login
+
+
+
+
+---
+
+## Settings
+
+### User Information Settings
+
+
+### Location Settings
+
+
+
+### Notificatioin Settings
+
+
+
+---
+
+
 
 ## Privacy & Permissions
 

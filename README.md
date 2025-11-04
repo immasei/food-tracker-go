@@ -2,7 +2,7 @@
 
 **COMP4216 / COMP5216 Group Project**
 
-[**User Guide**](userguide/index.md)
+[**User Guide**](userguide/README.md)
 
 ## Introduction
 
@@ -17,11 +17,11 @@ We initialized from food directory which contains mini project of week 5 content
 ## Key features
 
 - Food List main page to effectively manage food stock both inside and outside the fridge.
-- Notification on mobile phones for approaching expiration dates.
-- Effectively adding items through barcode scanning and AI receipt recognition.
-- Cloud storage of food list and user data.
+- AI receipt recognition to add food items effectively.
 - AI recipe recommendation based on food stock to consume items before expiry.
-- Sharing unwanted food with nearby app users.
+- Sharing food with nearby app users.
+- Cloud storage of food list and user data.
+- Notification on mobile phones for approaching expiration dates.
 
 
 
@@ -31,9 +31,9 @@ To install the necessary packages for the AI Recipe feature, run the following c
 
 ```bash
 cd food
+```
+```bash
 npm install
-npm install react-native-markdown-display
-npm install @google/genai
 ```
 
 All npm modules should be installed in project's `food` directory. 
@@ -49,11 +49,11 @@ npm start
 
 ## Demo Account for Tester
 
-Email: `123456@abc.com`
+Email: `kitkat@gmail.com`
 
 Password: `123456`
 
-... (Please replace with true account here.)
+You can also register your own accounts. Our app is open to register.
 
 
 
@@ -62,6 +62,12 @@ Password: `123456`
 ### Source Code Structure
 
 ... (Introduce the Code Structure and mention some file of Key Components here)
+
+The main components are located inside the ./food/app/ directory. In the ./food/app/ directory:
+- The (auth) folder contains the login and sign up features.
+- 
+Resources, such as images, are located in the ./food/assets/ directory.
+Firebase configuration files are located in the ./food/config/ directory.
 
 
 
