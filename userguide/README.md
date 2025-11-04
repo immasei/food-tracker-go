@@ -239,9 +239,9 @@ of your account.
 Entering the settings part, you will first see a **settings list** 
 includeing three sections:
 
-- **Personal Information Settings**
+- **User Information Settings**
 - **Location Settings**
-- **Notification Settings**
+- **Push Notification Settings**
 
 <p align="center">
   <img src="./images/settings.png" width="27%" alt="Screenshot showing the Settings main page with a list of setting items." />
