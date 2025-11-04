@@ -188,6 +188,42 @@ The **Nearby Food Discovery** let you discover and share food with people around
 
 ## 5. User Profile
 
+At the top of the Profile page, you’ll see a **User Card** showing your 
+basic user information — including your username, email, and phone number.
+Your email is the account for login, while your username and phone number 
+are displayed to other users when you share food.
+
+Below the card, there’s a **Food Tracking Statistics** section with four cards showing:
+- The total number of your food items.
+- How many food items you are sharing.
+- How many food items are expiring soon.
+- How many food items are already expired.
+
+Scrolling further down, you’ll find a **Personal Preferences** section 
+with more personal details like your address, taste preferences, 
+and allergy information.
+
+Your address is used in the Food Sharing feature and will be visible 
+to other users.
+
+Your taste preferences and allergy information will be provided to AI 
+in our AI Recipe feature to create personalized recipe suggestions 
+just for you.
+
+At the bottom of the page, there’s a **Settings** button that takes 
+you to the main settings list.
+
+You can also tap any personal info item to quickly jump to its 
+specific settings page.
+
+Finally, at the very bottom, there’s a **Log Out** button to sign out 
+of your account.
+
+<p align="center">
+  <img src="./images/profile.png" width="27%" alt="Screenshot showing the User Profile page." />
+  &nbsp
+  <img src="./images/profile-bottom.png" width="27%" alt="Screenshot showing the bottom part of User Profile page." />
+</p>
 
 ---
 
@@ -200,14 +236,65 @@ The **Nearby Food Discovery** let you discover and share food with people around
 
 ## Settings
 
+Entering the settings part, you will first see a **settings list** 
+includeing three sections:
+
+- **Personal Information Settings**
+- **Location Settings**
+- **Notification Settings**
+
+<p align="center">
+  <img src="./images/settings.png" width="27%" alt="Screenshot showing the Settings main page with a list of setting items." />
+</p>
+
 ### User Information Settings
 
+Here you can easily edit your personal details such as your username, phone number, taste preferences, and allergy information.
+
+Some of these settings are used for the **Food Sharing** and **AI Recipe Recommendation** features of our app.
+
+<p align="center">
+  <img src="./images/userinfo.png" width="27%" alt="Screenshot showing the User Information Settings page with a list of setting items." />
+</p>
 
 ### Location Settings
 
+This page lets you set your account’s location, which is used for our 
+nearby food sharing feature.
 
+You can tap **Use Current** to locate you using mobile phone GPS, 
+and your address will be filled in automatically.
 
-### Notificatioin Settings
+If you are not at the location you want to set, you can use the **Address Picker** to search and select one — the map position will update automatically.
+
+After saving your location, tap **“Open Map”** to view it and confirm 
+that it’s correct.
+
+<p align="center">
+  <img src="./images/location.png" width="27%" alt="Screenshot showing the Location Settings page." />
+  &nbsp
+  <img src="./images/map.jpg" width="27%" alt="Screenshot showing a map with user's location in the middle." />
+</p>
+
+### Notification Settings
+
+Our app sends **food expiration reminders** through mobile notifications.
+On this page, you can manage everything related to notifications:
+
+- The main notifications switch, **on or off**. Your settings will 
+be saved and synchronized to the cloud.
+
+- Set how many days in advance you want to be reminded — this number 
+also defines which items count as **expiring soon**.
+
+- Try the **Send test notification** button to instantly see what 
+an expiration reminder looks like.
+
+<p align="center">
+  <img src="./images/notification.png" width="27%" alt="Screenshot showing the Notification Settings page." />
+  &nbsp
+  <img src="./images/notification-demo.png" width="27%" alt="Screenshot showing a demo notification pop up at the top of the screen." />
+</p>
 
 
 

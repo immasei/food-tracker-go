@@ -95,6 +95,7 @@ export default function NotificationSettings() {
   };
 
   // Method to send push notification by Linh
+  // Note: The push notification can be delayed, like several minutes.
   const sendPushNoti = async () => {
     if (!userData) return;
     try {
@@ -109,6 +110,7 @@ export default function NotificationSettings() {
         );
       } else {
         // Send push notification using Expo
+        // Note: The push notification can be delayed, like several minutes.
         await sendExpoPush(token, title, body, { type: "expiring-food-summary", count: expiringItems });
       }
       show("Push enabled", "success");
@@ -230,6 +232,7 @@ export default function NotificationSettings() {
                 />
               </View>
             </Pressable>
+            {/* Note: The push notification can be delayed, like several minutes. */}
 
             <EditCard
               title="Time to notify"
