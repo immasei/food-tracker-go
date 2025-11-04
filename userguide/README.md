@@ -237,7 +237,7 @@ of your account.
 ## Settings
 
 Entering the settings part, you will first see a **settings list** 
-includeing three sections:
+including three sections:
 
 - **User Information Settings**
 - **Location Settings**
