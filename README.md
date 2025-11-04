@@ -40,7 +40,7 @@ All npm modules should be installed in project's `food` directory.
 
 We use Google Firebase cloud service. You can use ours, or configure yours. We provide configure guide in the later part [here](#google-firebase-service).
 
-After congiguration, you can start by:
+After configuration, you can start by:
 
 ```bash
 npm start
@@ -61,7 +61,7 @@ You can also register your own accounts. Our app is open to register.
 
 ### Source Code Structure
 
-Our project utilises React Native + Expo. The main project folder is `food`. As we uses React Router, the main page files are located inside the `./food/app/` directory.
+Our project utilises React Native + Expo. The main project folder is `food`. As we use React Router, the main page files are located inside the `./food/app/` directory.
 
 **In the `./food/app/` directory:**
 - The `(main)` folder is built for Tab navigation. The pages in this folder only act as entrance points and import the pages in other folders to achieve the Tab navigation. The `_layout.tsx` file inside this `(main)` folder defines the Tab navigation.
@@ -76,7 +76,7 @@ Our project utilises React Native + Expo. The main project folder is `food`. As 
 - The `layout.tsx` file in `app` folder defines Stack navigation for the whole app. It also wraps the entire Expo Router tree in AuthProvider plus the safe-area shell, and wires up system notification handler. It’s the place to plug global providers or tweak the high-level navigation chrome.
 
 The surrounding directories are modules used commonly by all the pages: 
-- `components/` houses reusable UI like toasts and address pickers. 
+- `components/` houses reusable UIs like toasts and address pickers. 
 - `config/` contains Firebase configuration files, Firebase setup and collection constants. 
 - `utils/` covers shared helpers such as dates, distances, and recent-input storage.
 - `types/` defines the shared data contracts. 
@@ -94,7 +94,7 @@ The surrounding directories are modules used commonly by all the pages:
 
 Combined, the structure gives you a clean split between navigation shells, feature modules, and the `service/util` layers, so future features can follow the same pattern—add a service first, wire it into a feature screen, and expose shared bits through components or contexts.
 
-Notices for future developers: 
+Notes for future developers: 
 
 1. Run the Expo app (`npx expo start`) to confirm the flows you extend still mount cleanly. 
 
@@ -130,17 +130,45 @@ Firebase is a Backend-as-a-Service (BaaS) platform by Google. It provides cloud-
 #### GenAI by Google
 Google’s Generative AI (GenAI) tools allow integration of AI-powered features, such as intelligent suggestions or content generation.
 
-... (Regarding the Expo libraries, we actually used many of them. Here, I just mentioned three packages related to mobile technologies.)
-
 
 
 ### Google Firebase Service
 
-We used Google Firebase Service for ...
+We use the **Google Firebase** service to handle user authentication and data storage. You can just use our Firebase service, but we still provide this guide if you want to configure your own.
 
-... (configuration of Firebase Service)
+Our setup includes two main Firebase services: **Authentication** and **Firestore Database**.
 
-... (I'm not sure if the tester is allowed to use our Firebase service. We need to decide whether inclu)
+**1. Set up your Firebase project**
+
+1. Go to [Firebase Console](https://console.firebase.google.com/).
+
+2. Click Add project and create a new one (or use an existing project).
+
+3. In Project settings → General, scroll down to *Your apps* and select Web app.
+
+4. Register the app and copy the generated Firebase configuration object.
+   It should look like this:
+
+   ```js
+   const firebaseConfig = {
+     apiKey: "YOUR_API_KEY",
+     authDomain: "your-project.firebaseapp.com",
+     projectId: "your-project",
+     storageBucket: "your-project.appspot.com",
+     messagingSenderId: "XXXXXXX",
+     appId: "1:XXXX:web:XXXX"
+   };
+   ```
+
+5. Replace the placeholder values in our `firebaseConfig` inside
+   `/food/config/firebaseConfig.js` (or equivalent file).
+
+
+**2. Enable Firebase Authentication**
+
+1. In Firebase Console → Build → Authentication → Get started.
+2. Under Sign-in method, enable Email/Password (and others if needed).
+3. No extra setup is required — the app uses this for user login and registration.
 
 After configured Firebase Service, please see the next part to configure Firestore database structure.
 
@@ -148,32 +176,37 @@ After configured Firebase Service, please see the next part to configure Firesto
 
 ### Firestore Database Structure
 
-... (configure Firestore database structure.)
+1. Go to Build → Firestore Database → Create database.
+2. Choose Start in test mode (for development) and select your region.
+3. Two main collections are used in this app:
+   * `users` — stores user profiles and preferences.
+   * `food` — stores food items linked to each user.
 
+**Example structure**
 
-... (Instructions to configure firebase keys, firebase database, Gemini/Openai api keys.)
+**`food` collection:**
+| Field      | Type      | Description                  |
+| ---------- | --------- | ---------------------------- |
+| name       | string    | Food name                    |
+| userId     | string    | ID of the owner user         |
+| category   | string    | Food type (e.g., "Meat")     |
+| shared     | boolean   | Whether item is shared       |
+| expiryDate | string    | Expiration date (YYYY-MM-DD) |
+| createdAt  | timestamp | Creation time                |
+| updatedAt  | timestamp | Last update time             |
 
+**`users` collection:**
 
-
-
-
-
-## Stage 2 Contents
-
-### What is functioning
-- Food List main page is fully functioning. This is our Minimum Viable Product (MVP).
-- Login/Signup functions are fully functioning. User data will synchronize to our Google Firebase backend and database.
-- User and Settings pages have basic interfaces. User details can be displayed, but some backend functions are to be implement.
-- Camera page based on our mini project. Camera function is working.
-- Recipe page is passing ingredients with prompts and able to receive the recipe.
-
-### TODO items
-- Add backend functions to many pages.
-- Fix the tab bar display problem.
-- Add AI receipt recognition function.
-- Add food sharing function.
-
-### Current challenges
-- Recipe page needs to pass dynamic ingredient since it is passing preset ingredient. Enable user to adjust prompt in high level.
-- Integrating a map SDK for food sharing function is challenging.
-- We are encountering a lot of bugs while creating new functions.
+| Field         | Type      | Description                                  |
+| ------------- | --------- | -------------------------------------------- |
+| userid        | string    | Unique user ID                               |
+| username      | string    | Display name                                 |
+| email         | string    | User email (login ID)                        |
+| phone_no      | string    | User phone number                            |
+| location      | map       | Contains address, lat/lng, and other details |
+| pushEnabled   | boolean   | Whether notifications are enabled            |
+| expiring_days | number    | Threshold for “expiring soon”                |
+| allergy_info  | string    | User allergy info                            |
+| taste_pref    | string    | Taste preference                             |
+| createdAt     | timestamp | Account creation time                        |
+| updatedAt     | timestamp | Last update time                             |
