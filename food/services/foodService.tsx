@@ -84,6 +84,7 @@ export async function fetchSharedFood(userId: string) {
   const qFood = query(
     collection(db, "food"),
     where("userId", "==", userId),
+    where("shared", "==", true),
     where("expiryDate", ">=", todayYMD())
   );
   const snap = await getDocs(qFood);
