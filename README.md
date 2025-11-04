@@ -67,7 +67,7 @@ Our project utilises React Native + Expo. The main project folder is `food`. As 
 - The `(main)` folder is built for Tab navigation. The pages in this folder only act as entrance points and import the pages in other folders to achieve the Tab navigation. The `_layout.tsx` file inside this `(main)` folder defines the Tab navigation.
 - The `(auth)` folder contains the login and sign up features.
 - The `(tracker)` folder is our app's main food tracker page, showing a food list.
-- The `(scanner)` folder is the AI-powered scanner to add food efficiently.
+- The `(scanner)` folder is the OCR scanner to add food efficiently.
 - The `(recipe)` folder has a AI-powered recipe generator based on your food items.
 - The `(nearby)` folder is the nearby food sharing feature, which is one of our app's main characteristic.
 - The `(profile)` folder is the user profile page, showing user information and food statistics data.
