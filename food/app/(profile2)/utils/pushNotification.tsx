@@ -38,14 +38,22 @@ export async function registerForPushAndSave(userDocId: string) {
 
 // client-side push sender to Expo API
 export async function sendExpoPush(token: string, title: string, body: string, data?: any) {
-  const payload = [{ to: token, sound: "default", title, body, data }];
-  const res = await fetch("https://exp.host/--/api/v2/push/send", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+  const payload = [{ to: token, sound: "default", title, body, data, priority: "high", interruptionLevel: "time-sensitive",
+  relevanceScore: 0.9,
+  ttl: 60}];
+  
+  await Notifications.scheduleNotificationAsync({
+    content: { title: title, body: body },
+    trigger: null,
   });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Expo push failed: ${res.status} ${text}`);
-  }
+
+  // const res = await fetch("https://exp.host/--/api/v2/push/send", {
+  //   method: "POST",
+  //   headers: { "Content-Type": "application/json" },
+  //   body: JSON.stringify(payload),
+  // });
+  // if (!res.ok) {
+  //   const text = await res.text();
+  //   throw new Error(`Expo push failed: ${res.status} ${text}`);
+  // }
 }
