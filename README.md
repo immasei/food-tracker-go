@@ -61,19 +61,44 @@ You can also register your own accounts. Our app is open to register.
 
 ### Source Code Structure
 
-... (Introduce the Code Structure and mention some file of Key Components here)
+Our project utilises React Native + Expo. The main project folder is `food`. As we uses React Router, the main page files are located inside the `./food/app/` directory.
 
-The main components are located inside the ./food/app/ directory. In the ./food/app/ directory:
-- The (auth) folder contains the login and sign up features.
-- 
-Resources, such as images, are located in the ./food/assets/ directory.
-Firebase configuration files are located in the ./food/config/ directory.
+**In the `./food/app/` directory:**
+- The `(main)` folder is built for Tab navigation. The pages in this folder only act as entrance points and import the pages in other folders to achieve the Tab navigation. The `_layout.tsx` file inside this `(main)` folder defines the Tab navigation.
+- The `(auth)` folder contains the login and sign up features.
+- The `(tracker)` folder is our app's main food tracker page, showing a food list.
+- The `(scanner)` folder is the AI-powered scanner to add food efficiently.
+- The `(recipe)` folder has a AI-powered recipe generator based on your food items.
+- The `(nearby)` folder is the nearby food sharing feature, which is one of our app's main characteristic.
+- The `(profile)` folder is the user profile page, showing user information and food statistics data.
+- The `settings` folder contains the settings pages, including user information settings, location settings, and notification settings.
+- The `index` file is the launch shim; it registers the foreground notification policy and immediately redirects into the tracker tab. If you need a splash workflow, this is where to hook it.
+- The `layout.tsx` file in `app` folder defines Stack navigation for the whole app. It also wraps the entire Expo Router tree in AuthProvider plus the safe-area shell, and wires up system notification handler. It’s the place to plug global providers or tweak the high-level navigation chrome.
+
+The surrounding directories are modules used commonly by all the pages: 
+- `components/` houses reusable UI like toasts and address pickers. 
+- `config/` contains Firebase configuration files, Firebase setup and collection constants. 
+- `utils/` covers shared helpers such as dates, distances, and recent-input storage.
+- `types/` defines the shared data contracts. 
+- `assets/` includes resources, such as images.
 
 
 
 ### Functionality of Key Components
 
-... (May overlap with the previos part, can be changed or merged.)
+`contexts/AuthContext.tsx` centralises Firebase Auth sign-in, sign-up, logout, and the user state flag. Any feature that needs user identity should consume this context rather than talking to Firebase directly.
+
+`services/foodService.tsx` is the data access layer for pantry items—create/update/delete, recent name/category tracking, sorting helpers, and shared-item queries. Extend this when you add new Firestore fields or list filters.
+
+`services/userService.tsx` encapsulates Firestore access for user profiles, stats aggregation, and location-aware nearby queries. Keep additional profile or analytics logic inside this layer for consistency.
+
+Combined, the structure gives you a clean split between navigation shells, feature modules, and the `service/util` layers, so future features can follow the same pattern—add a service first, wire it into a feature screen, and expose shared bits through components or contexts.
+
+Notices for future developers: 
+
+1. Run the Expo app (`npx expo start`) to confirm the flows you extend still mount cleanly. 
+
+2. When you add new data fields, update both the relevant types/ entries and the Firestore service layer before touching the screens.
 
 
 
