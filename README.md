@@ -29,6 +29,7 @@
     - [5. User Profile](#5-user-profile)
   - [Privacy & Permissions](#privacy--permissions)
   - [Troubleshooting FAQ](#troubleshooting-faq)
+  - [Acknowledgment](#acknowledgement)
 
 
 ## How to Run
