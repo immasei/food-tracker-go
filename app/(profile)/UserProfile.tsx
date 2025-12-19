@@ -442,7 +442,7 @@ const styles = StyleSheet.create({
 
   settingsButton: { position: "absolute", top: 20, right: 20, zIndex: 1, padding: 2 },
   profileSection: {
-    paddingTop: 20, paddingBottom: 0, marginTop: 0, marginHorizontal: 20,
+    paddingTop: 10, paddingBottom: 0, marginTop: 0, marginHorizontal: 20,
     alignItems: "center", borderRadius: 20
   },
   username: { fontSize: 24, fontWeight: "bold", marginBottom: 5, color: "#333" },
@@ -485,7 +485,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffffec',
     marginHorizontal: 20,
     borderRadius: 20,
-    marginTop:15,
+    marginTop:5,
     padding: 20,
     overflow: 'visible',
   },
