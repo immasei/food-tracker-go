@@ -12,7 +12,7 @@ import { useToast } from "@/components/Toast";
 import Loading from "@/components/Loading"
 import AddressPicker, { reverseGeocodeWithGoogle, savePickedAddress } from "@/components/AddressPicker";
 import { AuthContext } from "@/contexts/AuthContext";
-import { User, UStats } from "@/types/user"
+import { User, UStats } from "@/types/user";
 import { fetchUser, fetchStats, updateUser } from "@/services/userService";
 import { sendExpoPush, registerForPushAndSave } from "./utils/pushNotification";
 

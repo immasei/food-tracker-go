@@ -1,5 +1,6 @@
 // (scanner)/utils/ocr.tsx
 import * as FileSystem from "expo-file-system";
+import { GOOGLE_KEY } from "@/config/apiKey";
 
 export type OcrLine = { text: string; confidence?: number };
 export type OcrResult = {
@@ -8,8 +9,6 @@ export type OcrResult = {
   // 1 entry per text line
   lines: OcrLine[];
 };
-
-const GOOGLE_KEY = "AIzaSyBKHxLnQVBtu7eNqFkkZMWm1VbXp2xGDKU";
 
 export async function cloudOCR(photo: any): Promise<OcrResult> {
 

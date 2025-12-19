@@ -1,8 +1,7 @@
 import { GoogleGenAI, GenerateContentConfig } from '@google/genai';
+import { GOOGLE_KEY } from "@/config/apiKey";
 
-const API_KEY = 'AIzaSyA9VWJhQyPL5KTLc2PcGU4Xv1ZHTwl0KPM';
-
-const ai = new GoogleGenAI({ apiKey: API_KEY });
+const ai = new GoogleGenAI({ apiKey: GOOGLE_KEY });
 const model = 'gemini-2.5-flash'; 
 
 /**

@@ -3,8 +3,7 @@ import React, { forwardRef, useImperativeHandle, useRef } from "react";
 import { serverTimestamp } from "firebase/firestore";
 import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
 import { updateUser } from "@/services/userService";
-
-const GOOGLE_KEY = 'AIzaSyBKHxLnQVBtu7eNqFkkZMWm1VbXp2xGDKU';
+import { GOOGLE_KEY } from "@/config/apiKey";
 
 type Props = {
   onPicked: (picked: {
