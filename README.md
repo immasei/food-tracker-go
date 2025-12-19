@@ -2,13 +2,36 @@
 
 *Have you ever thrown a food product away because it was out of date and concerned about the food and money you wasted?*
 
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=t4Nej3CNayQ">
+    <img src="https://img.youtube.com/vi/t4Nej3CNayQ/0.jpg" width="700" />
+  </a>
+</p>
+
 **Food Tracker Go** is a mobile app designed to reduce food waste by helping users easily track food items and their expiry dates. With timely reminders and simple organisation, the app empowers users to make better use of what they already have.
 
 **Impacts on SDG 12**: Responsible Consumption and Production
 - Minimise food waste by preventing forgotten or expired items
 - Encourages sharing surplus food within the community, and promotes responsible consumption habits.
 
-## Installation guide
+## Table of Contents
+  - [How to Run](#how-to-run)
+    - [Install dependencies](#install-dependencies)
+    - [Firebase setup](#firebase-setup)
+    - [Google Cloud API key setup](#google-cloud-api-key-setup)
+    - [Run the app](#run-the-app)
+    - [Demo Account](#demo-account)
+  - [Core features](#core-features)
+    - [1. Food Tracker](#1-food-tracker)
+    - [2. Food OCR Scanner (Add by Scanning)](#2-food-ocr-scanner-add-by-scanning)
+    - [3. AI-Powered Recipe Generator](#3-ai-powered-recipe-generator)
+    - [4. Nearby Food Discovery (Share Food)](#4-nearby-food-discovery-share-food)
+    - [5. User Profile](#5-user-profile)
+  - [Privacy & Permissions](#privacy--permissions)
+  - [Troubleshooting FAQ](#troubleshooting-faq)
+
+
+## How to Run
 
 ### Install dependencies
 ```bash
@@ -22,7 +45,7 @@ This project uses Google Firebase. You can either use our Firebase configuration
 ### Google Cloud API key setup
 
 You'll also need to add your own API key
-1. Go to [Google Cloud Console](https://cloud.google.com/cloud-console?hl=en).
+1. Go to [Google Cloud Console](https://cloud.google.com/cloud-console?hl=en)
 2. Create a project
 3. Open the menu (☰) > **APIs & Services** > **+ Enabled APIs & services**
    - Geocoding Api
@@ -31,7 +54,7 @@ You'll also need to add your own API key
    - Gemini API
 4. Go to **APIs & Services** > **Credentials** > **+ Create credentials** > **API key**
    - Under API restrictions, select Restrict key, then choose the 4 APIs above
-   - Note that there's no Gemini API, tick Generative Language API instead.
+   - Note that there's no Gemini API, tick Generative Language API instead
 5. Copy your api key and put it under `config/apiKey.ts`
 
 ### Run the app
@@ -44,9 +67,7 @@ npm start
 
 Then scan the QR code and run the app using Expo Go.
 
-
-
-## Demo Account
+### Demo Account
 
 - Email: `kitkat@gmail.com`
 
@@ -199,3 +220,4 @@ You can opt to set a manual address if you prefer.
 | Can’t see myself on map | Ensure location is saved and at least one non-expired shared item exists. |
 | OCR misreads expiry | Retake photo closer to the printed date, under better lighting. |
 
+##
