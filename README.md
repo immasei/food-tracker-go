@@ -41,7 +41,7 @@ npm install
 
 ### Firebase setup
 
-This project uses Google Firebase. You can either use our Firebase configuration (no setup needed) or configure your own. Follow the guide [here](https://github.com/immasei/food-tracker-go/blob/main/FIREBASE.md).
+This project uses Google Firebase. You can either use our Firebase configuration (no setup needed) or configure your own. Follow the guide under [FIREBASE.md](https://github.com/immasei/food-tracker-go/blob/main/FIREBASE.md).
 
 ### Google Cloud API key setup
 
