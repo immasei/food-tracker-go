@@ -161,7 +161,7 @@ The **Nearby Food Discovery** let you discover and share food with people around
 - 🔴 **Other Users** – others who have shared, non-expired items.  
 
 - **Set map center**:
-  - Enter AU address (Google Places autocomplete)
+  - Enter address (Google Places autocomplete) (AU address only)
   - Long-press on map
   - Or use current GPS location (bottom right)
 - **Tap a pin**:
@@ -186,8 +186,8 @@ The **User Profile** screen shows your basic user information and some statistic
 - **Basic information about User**
    - Username, Email, Mobile, Location
 - **Set User Location** (full address)
-   - Set by current loaction (Google Geocoding Api)
-   - Set manually via autocomplete address picker (Google Places Api) 
+   - Set by current location (Google Geocoding Api)
+   - Set manually via autocomplete address picker (Google Places Api) (AU address only)
 - **Food Tracking Statistics**
    - The total number of your food items.
    - How many food items you are sharing.
@@ -227,6 +227,6 @@ This project was joinly built by (USYD) COMP5216 S2 2025 (T02 Group 3), with con
 | Name | Contributions |
 |-------------|------------|
 | **Lan Linh Nguyen** | **Food Tracker** (PR #2) (full implementation)<br><br>**Food OCR Scanner** (PR #19) (full implementation)<br><br>**Set authenticated context & redirections after login/signup** (PR #20)<br><br>**User Profile** (PR #24)<br>- Set user location (Current location via Google Geocoding API/ Manual address via Google Places Autocomplete)<br>- Push notifications for near-expiring items (iOS only)<br>- Pull to refresh<br>- Logout<br><br>**Nearby food discovery** (PR #38) (full implementation)<br><br>**Video editor**|
-| **Anna Nguyen** | **Setup Firebase** (PR #1) <br><br>**Sign-up / login** (PR #4/ PR #5/ PR #6/ PR #8) (without authenticated context)<br><br>**User Profile** (PR #25)<br>-Display map and anchor user’s saved/current location|
+| **Anna Nguyen** | **Setup Firebase** (PR #1) <br><br>**Sign-up / login** (PR #4/ PR #5/ PR #6/ PR #8) (without authenticated context)<br><br>**User Profile** (PR #25)<br>- Display map and anchor user’s saved/current location|
 | **Youheng Wang** | **User Profile** (PR #22/ PR #44)<br>- Food stats<br>- User information|
 | **Sanghyeon Lee** | **AI-Powered Recipe Generator** (PR #46/ PR #48/ PR #49) (full implementation)|
