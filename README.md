@@ -2,9 +2,11 @@
 
 *Have you ever thrown a food product away because it was out of date and concerned about the food and money you wasted?*
 
+*(Press the video to view the demo)*
+
 <p align="center">
   <a href="https://www.youtube.com/watch?v=t4Nej3CNayQ">
-    <img src="https://img.youtube.com/vi/t4Nej3CNayQ/0.jpg" width="700" />
+    <img src="https://img.youtube.com/vi/t4Nej3CNayQ/0.jpg" width="750" />
   </a>
 </p>
 
@@ -23,9 +25,9 @@
     - [Demo Account](#demo-account)
   - [Core features](#core-features)
     - [1. Food Tracker](#1-food-tracker)
-    - [2. Food OCR Scanner (Add by Scanning)](#2-food-ocr-scanner-add-by-scanning)
+    - [2. Food OCR Scanner](#2-food-ocr-scanner-add-by-scanning)
     - [3. AI-Powered Recipe Generator](#3-ai-powered-recipe-generator)
-    - [4. Nearby Food Discovery (Share Food)](#4-nearby-food-discovery-share-food)
+    - [4. Nearby Food Discovery](#4-nearby-food-discovery-share-food)
     - [5. User Profile](#5-user-profile)
   - [Privacy & Permissions](#privacy--permissions)
   - [Troubleshooting FAQ](#troubleshooting-faq)
@@ -156,7 +158,7 @@ The **Recipe** page generate recipe based on user selected ingredients using LLM
 
 The **Nearby Food Discovery** let you discover and share food with people around you.
 
-- 🟡 **Map Center Pin** – reference point (5 km circle). By default, it shows current location.
+- 🟡 **Map Center Pin** – reference point (5 km circle). By default, it shows your current location.
 - 🔵 **You** – your saved location.  
 - 🔴 **Other Users** – others who have shared, non-expired items.  
 
@@ -170,7 +172,7 @@ The **Nearby Food Discovery** let you discover and share food with people around
 - **Reload** to refresh map and listings.
 
 **Note** 
-- Only users **within a saved location within 5 km** and has >=1 **shared, non-expired** food will appear.
+- Only users **with a saved location within 5 km** and has >=1 **shared, non-expired** food will appear.
 - Users without a saved location are hidden.
 
 <p align="center">
