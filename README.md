@@ -80,15 +80,13 @@ You can also register your own accounts. Our app is open to register.
 
 ## Core features
 
-1. [**Food Tracker**](#1-food-tracker) – Add and manage items with expiry tracking.  
-2. [**Food OCR Scanner**](#2-food-ocr-scanner-add-by-scanning) – Add items by scanning labels using your camera.
-3. [**AI-Powered Recipe Generator**](#3-ai-powered-recipe-generator) - Turn food into creative meals.
-4. [**Nearby Food Discovery**](#4-nearby-food-discovery-share-food) – Find and share food with people nearby.
-5. [**Profile Manager**](#5-user-profile) - Manage your profile and view your consuming statistics.
+1. [**Food Tracker**](#1-food-tracker) – Track all items at a glance
+2. [**Food OCR Scanner**](#2-food-ocr-scanner-add-by-scanning) – Snap a label, auto-add your food
+3. [**AI-Powered Recipe Generator**](#3-ai-powered-recipe-generator) - Turn ingredients into creative meals
+4. [**Nearby Food Discovery**](#4-nearby-food-discovery-share-food) – Find and share food with people nearby
+5. [**Profile Manager**](#5-user-profile) - Manage your profile and view your pantry statistics.
 
 ### 1. Food Tracker
-
-The **Food Tracker** screen is where you manage all your items.
 
 - **Add** item manually (form with `name`, `category`, `expiry date`)
   - Recent history show suggested options for quick fill 
@@ -135,11 +133,11 @@ The **Food Scanner** screen allows users to capture food labels to auto-fill ite
 
 ### 3. AI-Powered Recipe Generator
 
-The **Recipe** page generate recipe based on user selected ingredients using LLM API.
+The **Recipe** page generate recipe based on user selected ingredients using Gemini API.
 
 - Tap **Recipe** button
 - Select desired ingredients to be included in the recipe.  
-- Tap **Generate Recipe (? items)** on top to generate recipe from chosen ingredients.
+- Tap **Generate Recipe** on top to generate recipe from chosen ingredients.
 - Tap **Back to Selection** on top to go back to the ingredient selection page.
 
 **Note** 
